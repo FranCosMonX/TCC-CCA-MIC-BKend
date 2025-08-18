@@ -1,0 +1,5 @@
+database.bd
+/venv
+venv
+
+__pycache__
