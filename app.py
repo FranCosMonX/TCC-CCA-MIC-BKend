@@ -7,6 +7,7 @@ from bd import (
   init_db, 
   obter_configuracao, 
 )
+from services.germini import Enviar_Mensagem
 import sqlite3
 
 app = Flask(__name__)
@@ -91,6 +92,21 @@ def get_dados():
     return jsonify(resultado), 200
   except Exception as e:
     return jsonify({'error': str(e)}), 500
+
+@app.route('/chat', methods=['POST', 'GET'])
+def emviar_mensagem():
+  mensagem = request.json.get('mensagem')
+  print('executou')
+  if not mensagem:
+    return jsonify({
+      'error': 'É necessário acrescentar alguma informação no chat.'
+    }), 400
+  
+  resposta = Enviar_Mensagem(mensagem)
+  print(resposta)
+  return jsonify({
+      'mensagem': resposta.text
+    }), 200
 
 # Iniciar a aplicação Flask
 if __name__ == '__main__':
