@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from bd import (
   atualizar_apelido,
   atualizar_dadosConf_gerais,
@@ -11,7 +12,7 @@ from services.germini import Enviar_Mensagem
 import sqlite3
 
 app = Flask(__name__)
-    
+
 @app.route('/initdb')
 def initialize_database():
   init_db()
@@ -93,7 +94,7 @@ def get_dados():
   except Exception as e:
     return jsonify({'error': str(e)}), 500
 
-@app.route('/chat', methods=['POST', 'GET'])
+@app.route('/chat', methods=['POST'])
 def emviar_mensagem():
   mensagem = request.json.get('mensagem')
   print('executou')
@@ -107,7 +108,30 @@ def emviar_mensagem():
   return jsonify({
       'mensagem': resposta.text
     }), 200
+  
+@app.route('/usuario', methods=['POST'])
+def definir_usr():
+  usr = request.json.get('usuario')
+  
+  if len(usr) < 2 or not usr:
+    return jsonify({
+      'error': 'O campo não pode ser nulo ou conter menos de 3 carcteres'
+    }), 400
+  
+  try:
+    resposta = atualizar_apelido(usr)
+    return jsonify({
+      'mensagem': resposta
+    }), 200
+  except Exception as e:
+    print(e)
+    return jsonify({
+      'error': f'{e}'
+    }), 400
 
 # Iniciar a aplicação Flask
 if __name__ == '__main__':
-  app.run(debug=True)
+  CORS(app, resources={
+    r"/*": {"origins": "http://localhost:5173"},
+  })
+  app.run(host='localhost', port=5000, debug=True)
