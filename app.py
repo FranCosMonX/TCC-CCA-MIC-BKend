@@ -8,7 +8,7 @@ from bd import (
   init_db, 
   obter_configuracao, 
 )
-from services.germini import Enviar_Mensagem
+from services.germini import Enviar_Mensagem, alterarPrompting
 import sqlite3
 
 app = Flask(__name__)
@@ -57,6 +57,7 @@ def definir_conf_geral():
     
   try:
     msg = atualizar_dadosConf_gerais(diretorio,ai,key_ai_api,ver_codigo,comentario_codigo)
+    alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}")
     return jsonify({
       'mensagem': msg,
       'dados':{
@@ -81,6 +82,8 @@ def definir_conf_mic():
   
   try:
     resultado = atualizar_dados_mic(mic)
+    
+    alterarPrompting(f"Microcontrolador: {mic}")
     return jsonify({'mensagem': resultado}), 200
   except Exception as e:
     return jsonify({'error': str(e)}), 500
