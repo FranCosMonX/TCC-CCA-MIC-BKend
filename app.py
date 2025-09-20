@@ -9,6 +9,7 @@ from bd import (
   obter_configuracao, 
 )
 from services.germini import Enviar_Mensagem, alterarPrompting
+import json
 import sqlite3
 
 app = Flask(__name__)
@@ -54,7 +55,7 @@ def definir_conf_geral():
     return jsonify({
       'error': 'O caminho da pasta onde os arquivos serão salvos, a InteligÊncia Artificial que será usada e a chave de acesso para acessar a API da AI escolhida são obrigatórios.'
     }), 400
-    
+  
   try:
     msg = atualizar_dadosConf_gerais(diretorio,ai,key_ai_api,ver_codigo,comentario_codigo)
     alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}")
@@ -100,17 +101,23 @@ def get_dados():
 @app.route('/chat', methods=['POST'])
 def emviar_mensagem():
   mensagem = request.json.get('mensagem')
-  print('executou')
+
   if not mensagem:
     return jsonify({
       'error': 'É necessário acrescentar alguma informação no chat.'
     }), 400
   
-  resposta = Enviar_Mensagem(mensagem)
-  print(resposta)
-  return jsonify({
-      'mensagem': resposta.text
+  resposta = Enviar_Mensagem(mensagem).text
+  try:
+    return jsonify({
+      'mensagem': resposta
     }), 200
+  except json.JSONDecodeError as e:
+    print(f"{resposta}")
+    return jsonify({
+      'mensagem': resposta
+    }), 200
+  
   
 @app.route('/usuario', methods=['POST'])
 def definir_usr():
