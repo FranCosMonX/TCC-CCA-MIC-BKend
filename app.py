@@ -19,27 +19,18 @@ def initialize_database():
   init_db()
   return 'database inicializado'
 
-@app.route('/configuracao/apelido', methods=['POST'])
-def definir_apelido():
-  try:
-    criar_config_default()
-  except Exception as e:
-    return jsonify({'error': str(e)}), 500
-  
-  apelido = request.json.get('apelido')
-  
-  if not apelido:
-    return jsonify({
-      'error': 'Para atualizar o apelido, é necessário que seja passado um nome válido.'
-    })
-  try:
-    resultado = atualizar_apelido(apelido)
-    return jsonify({'mensagem': resultado}), 201
-  except Exception as e:
-    return jsonify({'error': str(e)}), 500
-
 @app.route('/configuracaoGeral', methods=['POST'])
 def definir_conf_geral():
+  """
+  Descrição:
+  
+    Usado para mudar parâmetros do microcontrolador usados na conversa com a AI. É bastante importante para 
+  Retorno:
+  
+    201: Dados salvos com sucesso.
+    400: Campo ou alguma entrada de usuário incorreta.
+    500: Problemas com o backend.
+  """
   try:
     criar_config_default()
   except Exception as e:
@@ -74,6 +65,16 @@ def definir_conf_geral():
 
 @app.route('/configuracaoMicrocontrolador', methods=['POST'])
 def definir_conf_mic():
+  """
+  Descrição:
+  
+    Usado para mudar parâmetros do microcontrolador usados na conversa com a AI. É bastante importante para 
+  Retorno:
+  
+    200: Parâmetros salvos com sucesso.
+    400: Campo ou alguma entrada de usuário incorreta.
+    500: Problemas com o backend.
+  """
   mic = request.json.get('microcontrolador')
   
   if not mic:
@@ -92,6 +93,15 @@ def definir_conf_mic():
 # Rota para obter todos os dados
 @app.route('/configuracao', methods=['GET'])
 def get_dados():
+  """
+  Descrição:
+  
+    Usado para mudar parâmetros de configuração usados na conversa com a AI.
+  Retorno:
+  
+    200: Parâmetros salvos com sucesso.
+    500: Problemas com o backend.
+  """
   try:
     resultado = obter_configuracao()
     return jsonify(resultado), 200
@@ -100,6 +110,17 @@ def get_dados():
 
 @app.route('/chat', methods=['POST'])
 def emviar_mensagem():
+  """
+  Descrição:
+  
+    Usado para enviar uma solicitação para a AI.
+
+  Retorno:
+  
+    200: Alterado com sucesso.
+    400: Campo ou alguma entrada de usuário incorreta.
+    500: Problemas com o backend.
+  """
   mensagem = request.json.get('mensagem')
 
   if not mensagem:
@@ -117,10 +138,21 @@ def emviar_mensagem():
     return jsonify({
       'mensagem': resposta
     }), 200
-  
+  except Exception as e:
+    return jsonify({'error': str(e)}), 500
   
 @app.route('/usuario', methods=['POST'])
 def definir_usr():
+  """
+  Descrição:
+  
+    Usado para atualizar ou criar o nome do usuário na aplicação. É usado apenas pela AI para se comunicar com o usuário.
+
+  Retorno:
+  
+    200: Alterado com sucesso.
+    400: Campo ou alguma entrada de usuário incorreta.
+  """
   usr = request.json.get('usuario')
   
   if len(usr) < 2 or not usr:
@@ -134,7 +166,6 @@ def definir_usr():
       'mensagem': resposta
     }), 200
   except Exception as e:
-    print(e)
     return jsonify({
       'error': f'{e}'
     }), 400
