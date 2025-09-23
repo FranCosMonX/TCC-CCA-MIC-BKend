@@ -3,12 +3,7 @@ import os
 def criar_diretorios():
     """Cria os diretórios 'temporario' e 'executavel' se eles não existirem."""
     uri = r"C:\Users\franc\Documents"
-    diretorio_temporario = os.path.join(uri, 'temporario')
     diretorio_executavel = os.path.join(uri, 'executavel')
-
-    if not os.path.exists(diretorio_temporario):
-        os.makedirs(diretorio_temporario)
-        print(f"Diretório '{diretorio_temporario}' criado com sucesso.")
 
     if not os.path.exists(diretorio_executavel):
         os.makedirs(diretorio_executavel)
