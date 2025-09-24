@@ -1,5 +1,12 @@
 import os
 
+BAT_TEXT = """
+@echo off
+
+arduino-cli --version
+
+"""
+
 def criar_diretorios():
     """Cria os diretórios 'temporario' e 'executavel' se eles não existirem."""
     uri = r"C:\Users\franc\Documents"
@@ -15,7 +22,7 @@ def salvar_arquivo_temporario(nome_arquivo: str, conteudo: str):
     O arquivo é sobrescrito se já existir.
 
     Args:
-        nome_arquivo (str): O nome do arquivo a ser salvo (ex: 'meu_codigo.c').
+        nome_arquivo (str): O nome do arquivo a ser salvo (ex: `'meu_codigo.c'`).
         conteudo (str): O conteúdo a ser escrito no arquivo.
     """
     diretorio_temporario = 'temporario'
@@ -27,3 +34,7 @@ def salvar_arquivo_temporario(nome_arquivo: str, conteudo: str):
         print(f"Arquivo '{nome_arquivo}' salvo com sucesso em '{caminho_completo}'.")
     except IOError as e:
         print(f"Erro ao salvar o arquivo '{nome_arquivo}': {e}")
+        
+def criar_arquivo_bat(nome: str, conteudo: str):
+    pass
+

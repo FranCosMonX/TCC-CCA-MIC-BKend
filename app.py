@@ -9,6 +9,7 @@ from bd import (
   obter_configuracao, 
 )
 from services.germini import Enviar_Mensagem, alterarPrompting
+from common.archive import criar_diretorios, criar_arquivo_bat
 import json
 import sqlite3
 
@@ -162,6 +163,7 @@ def definir_usr():
   
   try:
     resposta = atualizar_apelido(usr)
+    alterarPrompting(f"usuário: {usr}")
     return jsonify({
       'mensagem': resposta
     }), 200
@@ -169,6 +171,15 @@ def definir_usr():
     return jsonify({
       'error': f'{e}'
     }), 400
+    
+# COMPILAR
+
+@app.route('/compile')
+def compile():
+  criar_diretorios()
+  
+  
+  pass
 
 # Iniciar a aplicação Flask
 if __name__ == '__main__':

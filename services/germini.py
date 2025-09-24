@@ -72,10 +72,12 @@ prompting = f"""Você é uma assistente de um pesquisador ou estudante que busca
               # ('nome':'minhaBibli.c','code':'....')].
               # É importante afirmar que mesmo que seja somente respostassimples, o retorno deve vir com o mesmo padrão e sem o ``` no inicio ou no começo, já que estarei lendo comoum json.
 
-resposta = Enviar_Mensagem(prompting)
-print(resposta.text)
-Enviar_Mensagem("Gere um hello world de circuitos embarcados na linugagem C")
-gerar_arquivos()
+Enviar_Mensagem(prompting)
+# resposta = Enviar_Mensagem(prompting)
+# print(resposta.text)
+# Enviar_Mensagem("Gere um hello world de circuitos embarcados na linugagem C")
+# gerar_arquivos()
+
 # if resposta:
 #   try:
 #       # Tenta carregar a resposta como um JSON
