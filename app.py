@@ -1,5 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from common.archive import (
+  criar_arquivo_bat,
+  execute_bat
+)
 from bd import (
   atualizar_apelido,
   atualizar_dadosConf_gerais,
@@ -11,14 +15,18 @@ from bd import (
 from services.germini import Enviar_Mensagem, alterarPrompting
 from common.archive import criar_diretorios, criar_arquivo_bat
 import json
-import sqlite3
 
 app = Flask(__name__)
 
 @app.route('/initdb')
 def initialize_database():
   init_db()
-  return 'database inicializado'
+  criar_arquivo_bat()
+  execute_bat()
+
+  return jsonify({
+    'mensagem': 'Requisitos iniciados com sucesso'
+  }), 200
 
 @app.route('/configuracaoGeral', methods=['POST'])
 def definir_conf_geral():
