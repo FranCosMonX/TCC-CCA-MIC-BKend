@@ -1,10 +1,22 @@
 import os, subprocess
 
-BAT_TEXT = """
-@echo off
-
+BAT_TEXT_INICIAL = """@echo off
+echo Verificando existencia da arduino-cli
+echo.
 arduino-cli --version
-
+IF %ERRORLEVEL% NEQ 0 (
+    echo Arduino CLI nao instalado. Será instalado em breve em 5 segundos
+    timout 5 /nobreak
+    echo.
+    winget install "Arduino CLI"
+    echo Arduino CLI instalado com êxito.
+    exit
+) ELSE {
+    echo Arduino CLI já está instalado
+    timout 10
+}
+arduino-cli --version
+timout 5
 """
 
 def criar_diretorios():
@@ -35,30 +47,19 @@ def salvar_arquivo(nome_arquivo: str, conteudo: str):
     except IOError as e:
         print(f"Erro ao salvar o arquivo '{nome_arquivo}': {e}")
 
-def criar_arquivo_bat():
-    uri = r"C:\Users\franc\Documents"
+def criar_arquivo_bat(text: str):
+    uri = r"C:\Users\franc\Documents\executavel.bat"
 
-    content = """
-    @echo off
-    echo Verificando existencia da arduino-cli
-    echo.
-    arduino-cli --version
-    IF %ERRORLEVEL% NEQ 0 (
-        echo Arduino CLI nao instalado
-        exit 
-    ) ELSE {
-        echo Arduino CLI instalado
-    }
-    pause
-    """
-
-    with open(uri / "executavel", encoding='UTF-8', mode='w') as arq:
-        arq.write(content)
+    with open(uri, encoding='UTF-8', mode='w') as arq:
+        arq.write(text)
 
     print(f'Arquivo bat criado com exito')
 
 def execute_bat():
-    resultado = subprocess.run("C:/Users/franc/Desenvolvendo/com/francosmonx/python/bat/exemplo.bat", capture_output=True, text=True, shell=True)
+    resultado = subprocess.run("C:/Users/franc/Documents/executavel.bat", capture_output=True, text=True, shell=True)
 
     print("Saída do arquivo .bat:")
     print(resultado.stdout)  # Exibe a saída padrão
+    
+criar_arquivo_bat(BAT_TEXT_INICIAL)
+execute_bat()

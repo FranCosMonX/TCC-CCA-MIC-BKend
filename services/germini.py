@@ -30,9 +30,23 @@ def alterarPrompting(apenas_mudanca:str):
   Enviar_Mensagem(f"""O usuário alterou as seguintes escolhas: {apenas_mudanca}. A partir desse momento, considere os novos pedidos para os dados atualizados junto com os que
                   não foram alterados. ESSA É UMA MENSAGEM DO SISTEMA, NÃO DEVE SER CITADA PARA O USUÁRIO.""")
 
+def requisicao_to_json(dados:str):
+  try:
+    dados_limpos = dados.strip().removeprefix("```json").removesuffix("```")
+    
+    dados_json = json.loads(dados_limpos)
+      
+    print("Resumo final em JSON gerado com sucesso!")
+    print("\nConteúdo do arquivo 'resumo_conversa_final.json':")
+    print(json.dumps(dados_json, indent=4))
+  except json.JSONDecodeError as e:
+    print("Erro ao decodificar a resposta JSON. A resposta do modelo não está no formato esperado.")
+    print(f"Resposta bruta recebida: {dados}")
+    print(f"Erro: {e}")
+
 def gerar_arquivos():
   gerador = genai_model_arq.start_chat(history=historico())
-  prompt_final = "Com base em toda a conversa com o usuário, gere os dados final em formato JSON, com as chaves 'numero_de_arquivos' e 'codigos', sendo códigos contendo uma lista de objetos com indice 'codigo' contendo o codigo do arquivo e 'nome_arquivo'"
+  prompt_final = "Com base em toda a conversa com o usuário, gere os dados final em formato JSON, com as chaves 'numero_de_arquivos' e 'codigos', sendo códigos contendo uma lista de objetos com indice 'codigo' contendo o codigo do arquivo definitivo e 'nome_arquivo'. O arquivo principal deve ter o nome 'app'."
   resposta = chat.send_message(prompt_final)
   try:
     json_string_limpa = resposta.text.strip().removeprefix("```json").removesuffix("```")

@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from common.archive import (
+  criar_diretorios,
   criar_arquivo_bat,
   execute_bat
 )
@@ -13,7 +14,6 @@ from bd import (
   obter_configuracao, 
 )
 from services.germini import Enviar_Mensagem, alterarPrompting
-from common.archive import criar_diretorios, criar_arquivo_bat
 import json
 
 app = Flask(__name__)
@@ -27,6 +27,10 @@ def initialize_database():
   return jsonify({
     'mensagem': 'Requisitos iniciados com sucesso'
   }), 200
+
+@app.route('/compile_exec')
+def exec_comp():
+  pass
 
 @app.route('/configuracaoGeral', methods=['POST'])
 def definir_conf_geral():
