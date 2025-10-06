@@ -13,7 +13,11 @@ from bd import (
   init_db, 
   obter_configuracao, 
 )
-from services.germini import Enviar_Mensagem, alterarPrompting
+from services.germini import (
+  Enviar_Mensagem,
+  alterarPrompting,
+  verificar_conexao
+)
 import json
 
 app = Flask(__name__)
@@ -27,6 +31,18 @@ def initialize_database():
   return jsonify({
     'mensagem': 'Requisitos iniciados com sucesso'
   }), 200
+
+@app.route('/verifica_conexao')
+def verifica_conexao():
+  result = verificar_conexao()
+  if result :
+    return jsonify({
+      'mensagem': 'Conectado com sucesso'
+    }), 200
+  else :
+    return jsonify({
+      'mensagem': 'Não foi possivel se conectar ao serviço de IA.'
+    })
 
 @app.route('/compile_exec')
 def exec_comp():
@@ -188,7 +204,7 @@ def definir_usr():
 
 @app.route('/compile')
 def compile():
-  criar_diretorios()
+  criar_diretorios('executavel')
   
   
   pass

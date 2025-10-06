@@ -18,6 +18,25 @@ def Enviar_Mensagem(mensagem:str):
   
   return response
 
+def verificar_conexao():
+    """
+    Verifica a conexão com a API do Gemini sem enviar uma mensagem de texto.
+
+    Retorna:
+        bool: True se a conexão for bem-sucedida, False caso contrário.
+    """
+    #funciona como um ping
+    try:
+      for model in genai.list_models():
+          break
+      
+      # Se a linha acima for executada sem erros, a conexão está funcionando.
+      return True
+    
+    except Exception as e:
+      print(f"Erro na conexão com a API: {e}")
+      return False
+
 def historico():
   """Retorna o histórico do chat."""
   return chat.history
@@ -46,7 +65,7 @@ def requisicao_to_json(dados:str):
 
 def gerar_arquivos():
   gerador = genai_model_arq.start_chat(history=historico())
-  prompt_final = "Com base em toda a conversa com o usuário, gere os dados final em formato JSON, com as chaves 'numero_de_arquivos' e 'codigos', sendo códigos contendo uma lista de objetos com indice 'codigo' contendo o codigo do arquivo definitivo e 'nome_arquivo'. O arquivo principal deve ter o nome 'app'."
+  prompt_final = "Com base em toda a conversa com o usuário, gere os dados final em formato JSON, com as chaves 'numero_de_arquivos', 'nome_projeto' e 'codigos', sendo códigos contendo uma lista de objetos com indice 'codigo' contendo o codigo do arquivo definitivo e 'nome_arquivo'. O arquivo principal deve ter o nome 'app'."
   resposta = chat.send_message(prompt_final)
   try:
     json_string_limpa = resposta.text.strip().removeprefix("```json").removesuffix("```")

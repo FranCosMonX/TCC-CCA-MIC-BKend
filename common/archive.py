@@ -1,32 +1,22 @@
 import os, subprocess
+from services.germini import obter_configuracao
 
-BAT_TEXT_INICIAL = """@echo off
-echo Verificando existencia da arduino-cli
-echo.
-arduino-cli --version
-IF %ERRORLEVEL% NEQ 0 (
-    echo Arduino CLI nao instalado. Será instalado em breve em 5 segundos
-    timout 5 /nobreak
-    echo.
-    winget install "Arduino CLI"
-    echo Arduino CLI instalado com êxito.
-    exit
-) ELSE {
-    echo Arduino CLI já está instalado
-    timout 10
-}
-arduino-cli --version
-timout 5
-"""
-
-def criar_diretorios():
+def criar_diretorios(nome:str):
+    """
+    Função utilizada para criar diretórios dentro de uma localidade informada pelo usuário
+    
+    Args:
+        nome (str): `<string>` contendo o nome + extensão.
+    """
+    user_config = obter_configuracao()
+    
     """Cria os diretórios 'temporario' e 'executavel' se eles não existirem."""
-    uri = r"C:\Users\franc\Documents"
-    diretorio_executavel = os.path.join(uri, 'executavel')
+    uri = user_config['diretorio']
+    diretorio_novo = os.path.join(uri, nome)
 
-    if not os.path.exists(diretorio_executavel):
-        os.makedirs(diretorio_executavel)
-        print(f"Diretório '{diretorio_executavel}' criado com sucesso.")
+    if not os.path.exists(diretorio_novo):
+        os.makedirs(diretorio_novo)
+        print(f"Diretório '{diretorio_novo}' criado com sucesso.")
 
 def salvar_arquivo(nome_arquivo: str, conteudo: str):
     """
@@ -47,19 +37,17 @@ def salvar_arquivo(nome_arquivo: str, conteudo: str):
     except IOError as e:
         print(f"Erro ao salvar o arquivo '{nome_arquivo}': {e}")
 
-def criar_arquivo_bat(text: str):
-    uri = r"C:\Users\franc\Documents\executavel.bat"
-
-    with open(uri, encoding='UTF-8', mode='w') as arq:
+def criar_arquivo_bat(caminho, text:str):
+    with open(caminho, encoding='UTF-8', mode='w') as arq:
         arq.write(text)
 
     print(f'Arquivo bat criado com exito')
 
-def execute_bat():
-    resultado = subprocess.run("C:/Users/franc/Documents/executavel.bat", capture_output=True, text=True, shell=True)
+def execute_bat(uri):
+    resultado = subprocess.run(uri, capture_output=True, text=True, shell=True)
 
     print("Saída do arquivo .bat:")
     print(resultado.stdout)  # Exibe a saída padrão
     
-criar_arquivo_bat(BAT_TEXT_INICIAL)
-execute_bat()
+# criar_arquivo_bat(BAT_TEXT_INICIAL)
+# execute_bat()
