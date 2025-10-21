@@ -48,8 +48,8 @@ def criar_config_default():
     resultado = cursor.fetchall()
     
     if len(resultado) == 0:
-      cursor.execute('INSERT INTO configuracao(apelido,diretorio,microcontrolador,ai,key_ai_api,ver_codigo,comentario_codigo,api_key_valid) VALUES (?,?,?,?,?,?,?,?)',
-                     (None, None, None, None, None, 0, 0, 0))
+      cursor.execute('INSERT INTO configuracao(apelido,diretorio,microcontrolador,ia,key_ai_api,ver_codigo,comentario_codigo,api_key_valid,id_microcontrolador) VALUES (?,?,?,?,?,?,?,?,?)',
+                     (None, None, None, None, None, 0, 0, 0, None))
       db.commit()
     else:
       print('Já tem uma configuração salva.')
@@ -77,19 +77,72 @@ def obter_configuracao():
       "apelido": config["apelido"],
       "diretorio": config["diretorio"],
       "microcontrolador": config["microcontrolador"],
-      "ia": config["ai"],  # cuidado: nome da coluna no banco deve ser "ai"
+      "id_microcontrolador": config["id_microcontrolador"],
+      "ia": config["ia"],
       "key_ai_api": config["key_ai_api"],
+      "api_key_valid": config["api_key_valid"],
       "ver_codigo": config["ver_codigo"],
       "comentario_codigo": config["comentario_codigo"],
     }
   except Exception as e:
     raise Exception(f'error: {str(e)}')
+
+def atualiza_chave_acesso_ai(api_key:str):
+  """
+  Unica forma de atualizar a chave de acesso da AI.
   
-def atualizar_dadosConf_gerais(diretorio, ai, key_ai_api, ver_codigo, comentario_codigo):
+  Exceptions:
+    Generico (Exception): informando que houve um erro de Sistema (500).
+  
+  Returns:
+    Mensagem (str): Informando que os dados foram salvos
+  """
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('UPDATE configuracao SET diretorio = ?, ai = ?, key_ai_api = ?, ver_Codigo = ?, comentario_codigo = ? WHERE id = ?', (diretorio, ai, key_ai_api, ver_codigo, comentario_codigo, 1,) )
+    cursor.execute('UPDATE configuracao SET key_ai_api = ? WHERE id = ?', (api_key, 1))
+    db.commit()
+    return 'Dados salvos com sucesso.'
+  except Exception as e:
+    raise Exception(f'Erro: {str(e)}')
+  finally:
+    db.close()
+
+def edit_validacao_api_key(status):
+  """
+  Unica forma de atualizar o status chave de acesso válido da AI.
+  
+  Exceptions:
+    Generico (Exception): informando que houve um erro de Sistema (500).
+  
+  Returns:
+    Mensagem (str): Informando que os dados foram salvos
+  """
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('UPDATE configuracao SET api_key_valid = ? WHERE id = ?', (status, 1))
+    db.commit()
+    return 'Dados salvos com sucesso.'
+  except Exception as e:
+    raise Exception(f'Erro: {str(e)}')
+  finally:
+    db.close()
+  
+def atualizar_dadosConf_gerais(diretorio, ai, ver_codigo, comentario_codigo):
+  """
+  Usado para atualizar apenas os dados a seguir.
+  
+  Params:
+    Diretório (str): onde será armazenado todos os códigos salvos
+    Ai (str): O nome da Inteligência Artificial utilizada
+    Ver_codigo (bool): Informando se a AI precisará fornecer os códigos no chat
+    Comentario_codigo (bool): Informando se a AI precisará explicar o código no chat
+  """
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('UPDATE configuracao SET diretorio = ?, ia = ?, ver_Codigo = ?, comentario_codigo = ? WHERE id = ?', (diretorio, ai, ver_codigo, comentario_codigo, 1,) )
     db.commit()
     
     return 'Dados salvos com sucesso.'
@@ -98,15 +151,16 @@ def atualizar_dadosConf_gerais(diretorio, ai, key_ai_api, ver_codigo, comentario
   finally:
     db.close()
 
-def atualizar_dados_mic(microcontrolador):
+def atualizar_dados_mic(id_microcontrolador, microcontrolador):
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('UPDATE configuracao SET microcontrolador = ? WHERE id = ?', (microcontrolador, 1) )
+    cursor.execute('UPDATE configuracao SET id_microcontrolador = ?, microcontrolador = ? WHERE id = ?', (id_microcontrolador, microcontrolador, 1) )
     db.commit()
     
     return 'Dados atualizados com sucesso!'
   except Exception as e:
+    print(f'error: {e}')
     raise Exception(f'Erro: {str(e)}')
   finally:
     db.close()

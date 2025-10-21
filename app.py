@@ -7,9 +7,11 @@ from common.archive import (
 )
 from bd import (
   atualizar_apelido,
+  atualiza_chave_acesso_ai,
   atualizar_dadosConf_gerais,
   atualizar_dados_mic,
-  criar_config_default, 
+  criar_config_default,
+  edit_validacao_api_key,
   init_db, 
   obter_configuracao, 
 )
@@ -18,35 +20,60 @@ from services.germini import (
   alterarPrompting,
   verificar_conexao
 )
+from features.ambiente import (
+  preparando_ambiente
+)
 import json
 
 app = Flask(__name__)
 
 @app.route('/initdb')
 def initialize_database():
-  init_db()
-  criar_arquivo_bat()
-  execute_bat()
+  """
+  Primeiro Endpoint que deverá ser chamado para a inicialização do Banco de Dados.
 
-  return jsonify({
-    'mensagem': 'Requisitos iniciados com sucesso'
-  }), 200
+  Retorno:
+  
+    201: Dados salvos com sucesso.
+    500: Problemas com o backend.
+  """
+  try:
+    init_db()
+    criar_config_default()
 
-@app.route('/verifica_conexao')
+    return jsonify({
+      'mensagem': 'Banco de Dados inicializado com êxito.'
+    }), 201
+  except Exception as e:
+    return jsonify({
+      'mensagem': 'Houve um problema ao executar o script de criação do Banco de Dados local.'
+    }), 500
+
+@app.route('/verificaConexao', methods=['POST'])
 def verifica_conexao():
+  """
+  Usado para verificar a conexão com a AI. É enviado uma requisição simples.
+  """
+  api = request.json.get('key_ai_api')
+
+  try:
+    atualiza_chave_acesso_ai(api)
+  except Exception as e:
+    print(f'Error: {e}')
+    return jsonify({
+      'mensagem': 'Houve um problema em armazenar chave da API_KEY.'
+    }), 500
+
   result = verificar_conexao()
   if result :
+    edit_validacao_api_key(True)
     return jsonify({
       'mensagem': 'Conectado com sucesso'
     }), 200
   else :
     return jsonify({
-      'mensagem': 'Não foi possivel se conectar ao serviço de IA.'
-    })
-
-@app.route('/compile_exec')
-def exec_comp():
-  pass
+      'mensagem': 'Não foi possivel se conectar ao serviço de IA. Verifique a API Key ou tente novamente.'
+    }), 400
 
 @app.route('/configuracaoGeral', methods=['POST'])
 def definir_conf_geral():
@@ -60,10 +87,6 @@ def definir_conf_geral():
     400: Campo ou alguma entrada de usuário incorreta.
     500: Problemas com o backend.
   """
-  try:
-    criar_config_default()
-  except Exception as e:
-    return jsonify({'error': str(e)}), 500
   
   diretorio = request.json.get('diretorio')
   ai = request.json.get('ai')
@@ -71,13 +94,28 @@ def definir_conf_geral():
   ver_codigo = request.json.get('ver_codigo')
   comentario_codigo = request.json.get('comentario_codigo')
   
-  if not diretorio or not ai or not key_ai_api:
+  configuracao = obter_configuracao()
+  status_chave_verificada = configuracao['api_key_valid']
+  chave_verificada = configuracao["key_ai_api"]
+  
+  print(f'chave verificada: {status_chave_verificada}')
+  if not status_chave_verificada:
     return jsonify({
-      'error': 'O caminho da pasta onde os arquivos serão salvos, a InteligÊncia Artificial que será usada e a chave de acesso para acessar a API da AI escolhida são obrigatórios.'
+      'mensagem': "Primeiro verifique se a chave de acesso é válida."
+    }), 400
+    
+  if  chave_verificada != key_ai_api:
+    return jsonify({
+      'mensagem': "Houve a alteração da chave de acesso após confirmar sua validação. Inclua a mesma ou valide uma nova."
+    }), 400
+  
+  if not diretorio or not ai:
+    return jsonify({
+      'error': 'O caminho da pasta onde os arquivos serão salvos e a InteligÊncia Artificial que será usada.'
     }), 400
   
   try:
-    msg = atualizar_dadosConf_gerais(diretorio,ai,key_ai_api,ver_codigo,comentario_codigo)
+    msg = atualizar_dadosConf_gerais(diretorio,ai,ver_codigo,comentario_codigo)
     alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}")
     return jsonify({
       'mensagem': msg,
@@ -88,7 +126,7 @@ def definir_conf_geral():
         'ver_codigo': ver_codigo,
         'comentario_codigo': comentario_codigo
       }
-    }), 201
+    }), 200
   except Exception as e:
     return jsonify({'error': str(e)}), 500
 
@@ -104,7 +142,9 @@ def definir_conf_mic():
     400: Campo ou alguma entrada de usuário incorreta.
     500: Problemas com o backend.
   """
+  id_mic = request.json.get('id_microcontrolador')
   mic = request.json.get('microcontrolador')
+  
   
   if not mic:
     return jsonify({
@@ -112,12 +152,17 @@ def definir_conf_mic():
     }), 400
   
   try:
-    resultado = atualizar_dados_mic(mic)
-    
+    resultado = atualizar_dados_mic(id_mic,mic)
     alterarPrompting(f"Microcontrolador: {mic}")
-    return jsonify({'mensagem': resultado}), 200
   except Exception as e:
     return jsonify({'error': str(e)}), 500
+  
+  try:
+    preparando_ambiente(id_mic)
+  except Exception as e:
+    return jsonify({'error': str(e)}), 500
+  
+  return jsonify({'mensagem': resultado}), 200
 
 # Rota para obter todos os dados
 @app.route('/configuracao', methods=['GET'])

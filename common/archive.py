@@ -18,7 +18,7 @@ def criar_diretorios(nome:str):
         os.makedirs(diretorio_novo)
         print(f"Diretório '{diretorio_novo}' criado com sucesso.")
 
-def salvar_arquivo(nome_arquivo: str, conteudo: str):
+def salvar_arquivo(diretorio:str, nome_arquivo: str, conteudo: str):
     """
     Salva o conteúdo em um arquivo no diretório 'temporario'.
     O arquivo é sobrescrito se já existir.
@@ -27,8 +27,7 @@ def salvar_arquivo(nome_arquivo: str, conteudo: str):
         nome_arquivo (str): O nome do arquivo a ser salvo (ex: `'meu_codigo.c'`).
         conteudo (str): O conteúdo a ser escrito no arquivo.
     """
-    diretorio_executavel = 'executavel'
-    caminho_completo = os.path.join(diretorio_executavel, nome_arquivo)
+    caminho_completo = os.path.join(diretorio, nome_arquivo)
     
     try:
         with open(caminho_completo, 'w', encoding='utf-8') as f:
