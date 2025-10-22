@@ -48,8 +48,8 @@ def criar_config_default():
     resultado = cursor.fetchall()
     
     if len(resultado) == 0:
-      cursor.execute('INSERT INTO configuracao(apelido,diretorio,microcontrolador,ia,key_ai_api,ver_codigo,comentario_codigo,api_key_valid,id_microcontrolador) VALUES (?,?,?,?,?,?,?,?,?)',
-                     (None, None, None, None, None, 0, 0, 0, None))
+      cursor.execute('INSERT INTO configuracao(nome_projeto,apelido,diretorio,microcontrolador,ia,key_ai_api,ver_codigo,comentario_codigo,api_key_valid,id_microcontrolador) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                     (None, None, None, None, None, None, 0, 0, 0, None))
       db.commit()
     else:
       print('Já tem uma configuração salva.')
@@ -74,6 +74,7 @@ def obter_configuracao():
     config = dados[0]
     return {
       "id": config["id"],
+      "nome_projeto": config["nome_projeto"],
       "apelido": config["apelido"],
       "diretorio": config["diretorio"],
       "microcontrolador": config["microcontrolador"],
@@ -87,7 +88,7 @@ def obter_configuracao():
   except Exception as e:
     raise Exception(f'error: {str(e)}')
 
-def atualiza_chave_acesso_ai(api_key:str):
+def atualiza_chave_acesso_ai(ia: str, api_key:str):
   """
   Unica forma de atualizar a chave de acesso da AI.
   
@@ -100,7 +101,7 @@ def atualiza_chave_acesso_ai(api_key:str):
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('UPDATE configuracao SET key_ai_api = ? WHERE id = ?', (api_key, 1))
+    cursor.execute('UPDATE configuracao SET ia = ?, key_ai_api = ? WHERE id = ?', (ia, api_key, 1))
     db.commit()
     return 'Dados salvos com sucesso.'
   except Exception as e:
@@ -129,7 +130,7 @@ def edit_validacao_api_key(status):
   finally:
     db.close()
   
-def atualizar_dadosConf_gerais(diretorio, ai, ver_codigo, comentario_codigo):
+def atualizar_dadosConf_gerais(nome_projeto, diretorio, ver_codigo, comentario_codigo):
   """
   Usado para atualizar apenas os dados a seguir.
   
@@ -142,7 +143,7 @@ def atualizar_dadosConf_gerais(diretorio, ai, ver_codigo, comentario_codigo):
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('UPDATE configuracao SET diretorio = ?, ia = ?, ver_Codigo = ?, comentario_codigo = ? WHERE id = ?', (diretorio, ai, ver_codigo, comentario_codigo, 1,) )
+    cursor.execute('UPDATE configuracao SET nome_projeto = ?, diretorio = ?, ver_Codigo = ?, comentario_codigo = ? WHERE id = ?', (nome_projeto, diretorio, ver_codigo, comentario_codigo, 1,) )
     db.commit()
     
     return 'Dados salvos com sucesso.'

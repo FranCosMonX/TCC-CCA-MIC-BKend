@@ -26,6 +26,11 @@ from features.ambiente import (
 import json
 
 app = Flask(__name__)
+CORS(app
+#      resources={
+#   r"/*": {"origins": "http://192.168.18.103:5173"},
+# }
+)
 
 @app.route('/initdb')
 def initialize_database():
@@ -54,10 +59,16 @@ def verifica_conexao():
   """
   Usado para verificar a conexão com a AI. É enviado uma requisição simples.
   """
+  ia = request.json.get('ia')
   api = request.json.get('key_ai_api')
 
+  if ia != "ChatGPT":
+    return jsonify({
+      'mensagem': "A aplicação só suporta a ligação com o ChatGPT no momento."
+    }), 400
+
   try:
-    atualiza_chave_acesso_ai(api)
+    atualiza_chave_acesso_ai(ia, api)
   except Exception as e:
     print(f'Error: {e}')
     return jsonify({
@@ -88,12 +99,13 @@ def definir_conf_geral():
     500: Problemas com o backend.
   """
   
+  nome_projeto = request.json.get('nome_projeto')
   diretorio = request.json.get('diretorio')
-  ai = request.json.get('ai')
   key_ai_api = request.json.get('key_ai_api')
   ver_codigo = request.json.get('ver_codigo')
   comentario_codigo = request.json.get('comentario_codigo')
-  
+  print(ver_codigo)
+  print(comentario_codigo)
   configuracao = obter_configuracao()
   status_chave_verificada = configuracao['api_key_valid']
   chave_verificada = configuracao["key_ai_api"]
@@ -109,25 +121,26 @@ def definir_conf_geral():
       'mensagem': "Houve a alteração da chave de acesso após confirmar sua validação. Inclua a mesma ou valide uma nova."
     }), 400
   
-  if not diretorio or not ai:
+  if not diretorio or not nome_projeto:
     return jsonify({
-      'error': 'O caminho da pasta onde os arquivos serão salvos e a InteligÊncia Artificial que será usada.'
+      'error': 'O caminho da pasta onde os arquivos serão salvos e o nome do projeto.'
     }), 400
   
   try:
-    msg = atualizar_dadosConf_gerais(diretorio,ai,ver_codigo,comentario_codigo)
-    alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}")
+    msg = atualizar_dadosConf_gerais(nome_projeto, diretorio,ver_codigo,comentario_codigo)
+    alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}, o nome do projeto é: {nome_projeto}")
     return jsonify({
       'mensagem': msg,
       'dados':{
         'diretorio': diretorio,
-        'ai': ai,
         'key_ai_api': key_ai_api,
         'ver_codigo': ver_codigo,
-        'comentario_codigo': comentario_codigo
+        'comentario_codigo': comentario_codigo,
+        'nome_projeto': nome_projeto
       }
     }), 200
   except Exception as e:
+    print(f"{e}")
     return jsonify({'error': str(e)}), 500
 
 @app.route('/configuracaoMicrocontrolador', methods=['POST'])
@@ -256,7 +269,4 @@ def compile():
 
 # Iniciar a aplicação Flask
 if __name__ == '__main__':
-  CORS(app, resources={
-    r"/*": {"origins": "http://localhost:5173"},
-  })
-  app.run(host='localhost', port=5000, debug=True)
+  app.run(host='0.0.0.0', port=5000, debug=True)

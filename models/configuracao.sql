@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS configuracao (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome_projeto TEXT,
     apelido TEXT,
     diretorio TEXT,
     microcontrolador TEXT,

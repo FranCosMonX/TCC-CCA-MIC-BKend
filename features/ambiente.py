@@ -3,10 +3,10 @@ import subprocess, os
 from bd import obter_configuracao
 from common.archive import salvar_arquivo, criar_diretorios
 
-configuracao = obter_configuracao()
-URI_CONFIG = os.path.join(configuracao['diretorio'],'config')
 
 def preparando_ambiente(id_microcontrolador:str=None):
+  configuracao = obter_configuracao()
+  URI_CONFIG = os.path.join(configuracao['diretorio'],'config')
   COMMAND = 'C:\\Program Files\\Arduino CLI\\arduino-cli.exe'
   BAT_TEXT_INICIAL = f"""@echo off
   
