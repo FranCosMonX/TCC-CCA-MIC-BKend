@@ -18,7 +18,8 @@ from bd import (
 from services.germini import (
   Enviar_Mensagem,
   alterarPrompting,
-  verificar_conexao
+  verificar_conexao,
+  atualiza_api_key
 )
 from features.ambiente import (
   preparando_ambiente
@@ -62,6 +63,7 @@ def verifica_conexao():
   ia = request.json.get('ia')
   api = request.json.get('key_ai_api')
 
+  print(f"ia: {ia}, key: {api}")
   if ia != "ChatGPT":
     return jsonify({
       'mensagem': "A aplicação só suporta a ligação com o ChatGPT no momento."
@@ -69,12 +71,13 @@ def verifica_conexao():
 
   try:
     atualiza_chave_acesso_ai(ia, api)
+    atualiza_api_key(api)
   except Exception as e:
     print(f'Error: {e}')
     return jsonify({
       'mensagem': 'Houve um problema em armazenar chave da API_KEY.'
     }), 500
-
+  print('passou 1')
   result = verificar_conexao()
   if result :
     edit_validacao_api_key(True)
