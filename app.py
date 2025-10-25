@@ -41,7 +41,7 @@ def initialize_database():
   """
   Primeiro Endpoint que deverá ser chamado para a inicialização do Banco de Dados.
 
-  Retorno:
+  Returns:
   
     201: Dados salvos com sucesso.
     500: Problemas com o backend.
@@ -62,6 +62,11 @@ def initialize_database():
 def verifica_conexao():
   """
   Usado para verificar a conexão com a AI. É enviado uma requisição simples.
+  Returns:
+  
+    200: Conexão bem sucedida.
+    400: Campo ou alguma entrada de usuário incorreta.
+    500: Problemas com o backend.
   """
   ia = request.json.get('ia')
   api = request.json.get('key_ai_api')
@@ -95,7 +100,7 @@ def definir_conf_geral():
   Descrição:
   
     Usado para mudar parâmetros do microcontrolador usados na conversa com a AI. É bastante importante para 
-  Retorno:
+  Returns:
   
     201: Dados salvos com sucesso.
     400: Campo ou alguma entrada de usuário incorreta.
@@ -107,8 +112,7 @@ def definir_conf_geral():
   key_ai_api = request.json.get('key_ai_api')
   ver_codigo = request.json.get('ver_codigo')
   comentario_codigo = request.json.get('comentario_codigo')
-  print(ver_codigo)
-  print(comentario_codigo)
+  
   configuracao = obter_configuracao()
   status_chave_verificada = configuracao['api_key_valid']
   chave_verificada = configuracao["key_ai_api"]
@@ -116,17 +120,26 @@ def definir_conf_geral():
   print(f'chave verificada: {status_chave_verificada}')
   if not status_chave_verificada:
     return jsonify({
-      'mensagem': "Primeiro verifique se a chave de acesso é válida."
+      'mensagem': "Primeiro verifique se a chave de acesso é válida.",
+      'campo': 'key_ai_api'
     }), 400
     
   if  chave_verificada != key_ai_api:
     return jsonify({
-      'mensagem': "Houve a alteração da chave de acesso após confirmar sua validação. Inclua a mesma ou valide uma nova."
+      'mensagem': "Houve a alteração da chave de acesso após confirmar sua validação. Inclua a mesma ou valide uma nova.",
+      'campo': 'key_ai_api'
+    }), 400
+    
+  if not nome_projeto:
+    return jsonify({
+      'mensagem': 'O campo não pode ser nulo',
+      'campo': 'nomeDoProjeto'
     }), 400
   
-  if not diretorio or not nome_projeto:
+  if not diretorio or len(diretorio) < 3:
     return jsonify({
-      'error': 'O caminho da pasta onde os arquivos serão salvos e o nome do projeto.'
+      'mensagem': 'O caminho onde os arquivos serão salvos é invalido.',
+      'campo': 'diretorio'
     }), 400
   
   try:
