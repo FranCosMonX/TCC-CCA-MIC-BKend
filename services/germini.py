@@ -1,6 +1,6 @@
 from google import generativeai as genai
 from bd import obter_configuracao
-from common.exceptions import UsuarioError
+from common.exceptions import UsuarioError, SistemaError
 import json
 
 genai_config = genai.types.GenerationConfig(
@@ -56,6 +56,25 @@ def verificar_conexao():
     except Exception as e:
       print(f"Erro na conexão com a API: {e}")
       return False
+
+def carregar_dados_salvos():
+  """
+  Descrição:
+  
+  Carregar os dados salvos no Banco de Dados
+  """
+  
+  if not verificar_conexao():
+    try:
+      configuracao = obter_configuracao()
+      if configuracao['key_ai_api'] is None:
+        raise UsuarioError("Não foi cadastrado chave de acesso da IA.")
+      atualiza_api_key(configuracao['key_ai_api'])
+    except UsuarioError as errUser:
+      raise UsuarioError( errUser.mensagem)
+    except Exception as e:
+      print(e)
+      raise SistemaError("Houve um erro na função carregar_dados_salvos em Germini.py")
 
 def historico():
   """Retorna o histórico do chat."""

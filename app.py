@@ -1,12 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from common.archive import (
-  criar_diretorios,
-  criar_arquivo_bat,
-  execute_bat
+  criar_diretorios
 )
 from common.exceptions import (
-  UsuarioError
+  UsuarioError,
+  SistemaError
 )
 from bd import (
   atualizar_apelido,
@@ -16,13 +15,14 @@ from bd import (
   criar_config_default,
   edit_validacao_api_key,
   init_db, 
-  obter_configuracao, 
+  obter_configuracao,
 )
 from services.germini import (
   Enviar_Mensagem,
   alterarPrompting,
   verificar_conexao,
-  atualiza_api_key
+  atualiza_api_key,
+  carregar_dados_salvos
 )
 from features.ambiente import (
   preparando_ambiente
@@ -174,24 +174,36 @@ def definir_conf_mic():
   id_mic = request.json.get('id_microcontrolador')
   mic = request.json.get('microcontrolador')
   
-  
   if not mic:
     return jsonify({
-      'error': 'É necessário escolher o microcontrolador para continuar.'
+      'mensagem': 'É necessário escolher o microcontrolador para continuar.'
     }), 400
+  
+  try:
+    carregar_dados_salvos()
+  except UsuarioError as userError:
+    return jsonify({
+      'mensagem': userError.mensagem
+    }), 400
+  except SistemaError as sysError:
+    return jsonify({
+      'mensagem': "Houve um erro inesperado no sistema. Contacte o desenvolvedor."
+    }), 500
   
   try:
     resultado = atualizar_dados_mic(id_mic,mic)
     alterarPrompting(f"Microcontrolador: {mic}")
   except Exception as e:
-    return jsonify({'error': str(e)}), 500
+    print(e)
+    return jsonify({'mensagem': str(e)}), 500
   
   try:
     preparando_ambiente(id_mic)
   except Exception as e:
+    print(e)
     return jsonify({'error': str(e)}), 500
   
-  return jsonify({'mensagem': resultado}), 200
+  return jsonify({'mensagem': "Ambiente de trabalho configurado com êxito."}), 200
 
 # Rota para obter todos os dados
 @app.route('/configuracao', methods=['GET'])
@@ -258,9 +270,15 @@ def definir_usr():
   """
   usr = request.json.get('usuario')
   
+  configuracao = obter_configuracao()
+  if configuracao['microcontrolador'] is None:
+    return jsonify({
+      'mensagem': 'Antes de começar, é necessário preparar o ambiente de trabalho.'
+    })
+  
   if len(usr) < 2 or not usr:
     return jsonify({
-      'error': 'O campo não pode ser nulo ou conter menos de 3 carcteres'
+      'mensagem': 'O campo não pode ser nulo ou conter menos de 3 carcteres'
     }), 400
   
   try:
