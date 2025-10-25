@@ -65,7 +65,6 @@ def obter_configuracao():
     cursor = db.cursor()
     cursor.execute('SELECT * FROM configuracao')
     dados = cursor.fetchall()
-    print([dict(row) for row in dados])
     db.close()
     
     if len(dados) == 0:

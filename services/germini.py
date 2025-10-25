@@ -1,6 +1,7 @@
 from google import generativeai as genai
 from bd import obter_configuracao
-import json, importlib
+from common.exceptions import UsuarioError
+import json
 
 genai_config = genai.types.GenerationConfig(
   temperature=0.9,
@@ -21,8 +22,7 @@ def atualiza_api_key(chave:str):
   try:
     genai.configure(api_key=chave)
   except Exception as e:
-    print(f"Erro ao configurar a nova chave de API: {e}")
-    return False
+    raise UsuarioError(f"Erro ao configurar a nova chave de API: {e}")
 
   genai_config = genai.types.GenerationConfig(
     temperature=0.9,
@@ -30,15 +30,13 @@ def atualiza_api_key(chave:str):
   )
 
   if not verificar_conexao():
-    print("A nova chave de API não é válida ou a conexão falhou.")
-    return False
+    raise UsuarioError(f"Erro ao configurar a nova chave de API: {e}")
 
   genai_model = genai.GenerativeModel('gemini-2.5-flash')
   genai_model_arq = genai.GenerativeModel('gemini-2.5-flash')
   chat = genai_model.start_chat()
   
   print("Chave de API atualizada e objetos recriados com sucesso.")
-  return True
 
 def verificar_conexao():
     """

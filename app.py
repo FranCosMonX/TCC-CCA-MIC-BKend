@@ -5,6 +5,9 @@ from common.archive import (
   criar_arquivo_bat,
   execute_bat
 )
+from common.exceptions import (
+  UsuarioError
+)
 from bd import (
   atualizar_apelido,
   atualiza_chave_acesso_ai,
@@ -72,22 +75,19 @@ def verifica_conexao():
   try:
     atualiza_chave_acesso_ai(ia, api)
     atualiza_api_key(api)
+    edit_validacao_api_key(True)
+    return jsonify({
+      'mensagem': 'Conectado com sucesso'
+    }), 200
+  except UsuarioError as errU:
+    return jsonify({
+      'mensagem': errU.mensagem
+    }), 400
   except Exception as e:
     print(f'Error: {e}')
     return jsonify({
       'mensagem': 'Houve um problema em armazenar chave da API_KEY.'
     }), 500
-  print('passou 1')
-  result = verificar_conexao()
-  if result :
-    edit_validacao_api_key(True)
-    return jsonify({
-      'mensagem': 'Conectado com sucesso'
-    }), 200
-  else :
-    return jsonify({
-      'mensagem': 'Não foi possivel se conectar ao serviço de IA. Verifique a API Key ou tente novamente.'
-    }), 400
 
 @app.route('/configuracaoGeral', methods=['POST'])
 def definir_conf_geral():
