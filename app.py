@@ -20,9 +20,9 @@ from bd import (
 from services.germini import (
   Enviar_Mensagem,
   alterarPrompting,
-  verificar_conexao,
   atualiza_api_key,
-  carregar_dados_salvos
+  carregar_dados_salvos,
+  iniciar,
 )
 from features.ambiente import (
   preparando_ambiente
@@ -30,11 +30,11 @@ from features.ambiente import (
 import json
 
 app = Flask(__name__)
-CORS(app
-#      resources={
-#   r"/*": {"origins": "http://192.168.18.103:5173"},
-# }
-)
+CORS(app,
+     resources={
+      r"/*": {"origins": "http://localhost:5173"},
+    }
+  )
 
 @app.route('/initdb')
 def initialize_database():
@@ -71,15 +71,14 @@ def verifica_conexao():
   ia = request.json.get('ia')
   api = request.json.get('key_ai_api')
 
-  print(f"ia: {ia}, key: {api}")
-  if ia != "ChatGPT":
+  if ia != "Germini":
     return jsonify({
-      'mensagem': "A aplicação só suporta a ligação com o ChatGPT no momento."
+      'mensagem': "A aplicação só suporta a ligação com o Germini no momento."
     }), 400
 
   try:
-    atualiza_chave_acesso_ai(ia, api)
     atualiza_api_key(api)
+    atualiza_chave_acesso_ai(ia, api)
     edit_validacao_api_key(True)
     return jsonify({
       'mensagem': 'Conectado com sucesso'
@@ -89,7 +88,6 @@ def verifica_conexao():
       'mensagem': errU.mensagem
     }), 400
   except Exception as e:
-    print(f'Error: {e}')
     return jsonify({
       'mensagem': 'Houve um problema em armazenar chave da API_KEY.'
     }), 500
@@ -274,7 +272,12 @@ def definir_usr():
   if configuracao['microcontrolador'] is None:
     return jsonify({
       'mensagem': 'Antes de começar, é necessário preparar o ambiente de trabalho.'
-    })
+    }), 400
+    
+  if not configuracao['api_key_valid']:
+    return jsonify({
+      'mensagem': 'É necessário passar uma chave de acesso para a IA que seja válida'
+    }), 400
   
   if len(usr) < 2 or not usr:
     return jsonify({
@@ -284,10 +287,12 @@ def definir_usr():
   try:
     resposta = atualizar_apelido(usr)
     alterarPrompting(f"usuário: {usr}")
+    iniciar()
     return jsonify({
       'mensagem': resposta
     }), 200
   except Exception as e:
+    print(e)
     return jsonify({
       'error': f'{e}'
     }), 400
@@ -303,4 +308,4 @@ def compile():
 
 # Iniciar a aplicação Flask
 if __name__ == '__main__':
-  app.run(host='0.0.0.0', port=5000, debug=True)
+  app.run(host='localhost', port=5000, debug=True)
