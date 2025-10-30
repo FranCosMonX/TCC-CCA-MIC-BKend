@@ -64,23 +64,30 @@ def carregar_configuracao():
   É necessário que tenha o arquivo de banco de dados gerado.
   """
   configuracao = obter_configuracao()
+  mensagem = ""
+  execucao = [False, False]
   try:
     preparando_ambiente(configuracao['id_microcontrolador'])
+    mensagem += "Ambiente de execução configurado com exito."
+    execucao[0] = True
   except Exception as e:
-    return jsonify({
-      'mensagem': 'Houve um problema ao resgatar dados do microcontrolador e configurar o ambiente de execução'
-    }), 400
+    mensagem += 'Não há dados suficientes para preparar o ambiente de execução de código.'
   
   try:
     atualiza_api_key(configuracao['key_ai_api'])
+    mensagem += "Conexão com a IA realizada com êxito."
+    execucao[1] = True
   except Exception as e:
-    return jsonify({
-      'mensagem': e
-    })
+    mensagem += "Não há dados suficientes para tentar se conectar a API da IA."
   
-  return jsonify({
-    'mensagem': 'Conexão com a IA foi confirmada e ambiente de execução preparado.'
-  }), 200
+  if execucao[0] or execucao[1]:
+    return jsonify({
+      'mensagem': mensagem
+    }), 200
+  else:
+    return jsonify({
+      'mensagem': "Não foi possivel realizar esta ação. Atualize os dados."
+    }), 400
 
 @app.route('/verificaConexao', methods=['POST'])
 def verifica_conexao():
