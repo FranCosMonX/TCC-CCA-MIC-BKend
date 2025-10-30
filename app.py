@@ -57,6 +57,30 @@ def initialize_database():
     return jsonify({
       'mensagem': 'Houve um problema ao executar o script de criação do Banco de Dados local.'
     }), 500
+    
+@app.route('/CarregarConfiguracao', methods=['GET'])
+def carregar_configuracao():
+  """
+  É necessário que tenha o arquivo de banco de dados gerado.
+  """
+  configuracao = obter_configuracao()
+  try:
+    preparando_ambiente(configuracao['id_microcontrolador'])
+  except Exception as e:
+    return jsonify({
+      'mensagem': 'Houve um problema ao resgatar dados do microcontrolador e configurar o ambiente de execução'
+    }), 400
+  
+  try:
+    atualiza_api_key(configuracao['key_ai_api'])
+  except Exception as e:
+    return jsonify({
+      'mensagem': e
+    })
+  
+  return jsonify({
+    'mensagem': 'Conexão com a IA foi confirmada e ambiente de execução preparado.'
+  }), 200
 
 @app.route('/verificaConexao', methods=['POST'])
 def verifica_conexao():

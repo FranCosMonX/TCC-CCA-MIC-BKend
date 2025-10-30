@@ -17,6 +17,14 @@ def Enviar_Mensagem(mensagem:str):
   return response
 
 def atualiza_api_key(chave:str):
+  """_summary_
+
+  Args:
+      chave (str): chave para acessar a API  da IA.
+
+  Raises:
+      UsuarioError: Erro ao configurar a chave
+  """
   global genai_config, genai_model, genai_model_arq, chat
 
   try:
