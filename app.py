@@ -12,6 +12,7 @@ from bd import (
   atualiza_chave_acesso_ai,
   atualizar_dadosConf_gerais,
   atualizar_dados_mic,
+  atualiza_config_default,
   criar_config_default,
   edit_validacao_api_key,
   init_db, 
@@ -46,26 +47,58 @@ def initialize_database():
     201: Dados salvos com sucesso.
     500: Problemas com o backend.
   """
+  
   try:
-    init_db()
-    criar_config_default()
-
-    return jsonify({
-      'mensagem': 'Banco de Dados inicializado com êxito.'
-    }), 201
-  except Exception as e:
-    return jsonify({
-      'mensagem': 'Houve um problema ao executar o script de criação do Banco de Dados local.'
-    }), 500
+    configuracao = obter_configuracao()
     
-@app.route('/CarregarConfiguracao', methods=['GET'])
+    if configuracao['id_microcontrolador'] is not None or configuracao['key_ai_api'] is not None or configuracao['diretorio'] is not None:
+      return jsonify({
+        'mensagem': 'Já existe arquivo e dados salvos.'
+      }), 200
+    
+    return jsonify({
+      'mensagem': 'teste'}), 204
+  except:
+    try:
+      init_db()
+      criar_config_default()
+
+      return jsonify({
+        'mensagem': 'Banco de Dados inicializado com êxito.'
+      }), 201
+    except Exception as e:
+      print("===================================")
+      print(e)
+      return jsonify({
+        'mensagem': 'Houve um problema ao executar o script de criação do Banco de Dados local.'
+      }), 500
+
+@app.route('/RemoverConfiguracao', methods=['POST'])
+def remover_configuracao():
+  """
+  Usado para remover todas as configurações salvas no banco de dados.
+  """
+  
+  try:
+    atualiza_config_default()
+    # init_db()
+    # criar_config_default()
+    return jsonify({
+      'mensagem': 'Dados resetados com sucesso.'
+    }), 200
+  except:
+    return jsonify({
+      'mensagem': 'Houve um problema ao resetar os dados.'
+    }), 500
+
+@app.route('/CarregarConfiguracao', methods=['POST'])
 def carregar_configuracao():
   """
   É necessário que tenha o arquivo de banco de dados gerado.
   """
   configuracao = obter_configuracao()
   mensagem = ""
-  execucao = [False, False]
+  execucao = [configuracao['id_microcontrolador'] is not None, configuracao['key_ai_api'] is not None, configuracao['diretorio'] is not None]
   try:
     preparando_ambiente(configuracao['id_microcontrolador'])
     mensagem += "Ambiente de execução configurado com exito."
@@ -80,14 +113,25 @@ def carregar_configuracao():
   except Exception as e:
     mensagem += "Não há dados suficientes para tentar se conectar a API da IA."
   
-  if execucao[0] or execucao[1]:
+  if not configuracao['diretorio']:
+    mensagem += "O campo diretório se encontra vazio, preencha o campo corretamente."
+  else:
+    execucao[2] = True
+  
+  if execucao[0] or execucao[1] or execucao[2]:
     return jsonify({
       'mensagem': mensagem
     }), 200
   else:
-    return jsonify({
-      'mensagem': "Não foi possivel realizar esta ação. Atualize os dados."
-    }), 400
+    try:
+      atualiza_config_default()
+      return jsonify({
+        'mensagem': "Não foi possivel realizar esta ação. Atualize os dados."
+      }), 400
+    except Exception as e:
+      return jsonify({
+        'mensagem': e
+      }), 500
 
 @app.route('/verificaConexao', methods=['POST'])
 def verifica_conexao():

@@ -58,6 +58,16 @@ def criar_config_default():
   finally:
     db.close()
     print('funcao finalizada')
+
+def atualiza_config_default():
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('UPDATE configuracao SET nome_projeto = ?, apelido = ?, diretorio = ?, microcontrolador = ?, ia = ?, key_ai_api = ?, ver_codigo = ?, comentario_codigo = ?, api_key_valid = ?, id_microcontrolador = ? WHERE id = 1', (None, None, None, None, None, None, False, False, False, None))
+    db.commit()
+  except Exception as e:
+    print(e)
+    raise SistemaError("Problema ao atualizar os dados para default")
     
 def obter_configuracao():
   try:

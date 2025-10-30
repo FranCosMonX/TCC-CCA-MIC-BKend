@@ -1,6 +1,7 @@
 from services.germini import obter_configuracao
 from common.exceptions import SistemaError
 import os, subprocess
+from pathlib import Path
 
 def criar_diretorios(nome:str):
     """
@@ -36,21 +37,6 @@ def salvar_arquivo(diretorio:str, nome_arquivo: str, conteudo: str):
         print(f"Arquivo '{nome_arquivo}' salvo com sucesso em '{caminho_completo}'.")
     except IOError as e:
         print(f"Erro ao salvar o arquivo '{nome_arquivo}': {e}")
-
-def remover_arquivo_database_bd():
-    BAT_TEXT = """
-    @echo off
-    rm database.bd
-    IF %ERRORLEVEL% NEQ 0 (
-        exit /b 1
-    )
-    exit /b 0
-    """
-    retorno = subprocess.run(BAT_TEXT, shell=True)
-    if retorno.returncode != 0:
-        raise SistemaError("Houve um Erro ao excluir o arquivo de banco de dados.")
-    
-    return "Arquivo database.bd removido com sucesso."
 
 def criar_arquivo_bat(caminho, text:str):
     with open(caminho, encoding='UTF-8', mode='w') as arq:
