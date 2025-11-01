@@ -59,7 +59,13 @@ def criar_config_default():
     db.close()
     print('funcao finalizada')
 
-def atualiza_config_default():
+def resetar_configs():
+  """
+  Usado para remover todos os dados de configuração salvos.
+
+  Raises:
+      SistemaError: Problema ao resetar os dados do arquivo.
+  """
   try:
     db = get_db()
     cursor = db.cursor()
