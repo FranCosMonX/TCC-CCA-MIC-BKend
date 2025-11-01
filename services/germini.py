@@ -118,8 +118,17 @@ def requisicao_to_json(dados:str):
     print(f"Erro: {e}")
 
 def gerar_arquivos():
+  configuracao = obter_configuracao()
   gerador = genai_model_arq.start_chat(history=historico())
-  prompt_final = "Com base em toda a conversa com o usuário, gere os dados final em formato JSON, com as chaves 'numero_de_arquivos', 'nome_projeto' e 'codigos', sendo códigos contendo uma lista de objetos com indice 'codigo' contendo o codigo do arquivo definitivo e 'nome_arquivo'. O arquivo principal deve ter o nome 'app'."
+  prompt_final = f"""
+  Com base em toda a conversa com o usuário, gere os dados final em formato JSON, com as seguintes chaves
+  'numero_de_arquivos': '',
+  'nome_projeto': '',
+  bibliotecas: []
+  'codigos': sendo códigos contendo uma lista de objetos com indice 'codigo', 'id' e 'nome_arquivo'.
+  É importante que seja preenchido corretamente as listas de códigos e a lista de bibliotecas. Elas devem ser compativeis para executar no arduino-cli.
+  Além disso, é importante destacar que o arquivo principal deve conter o nome {configuracao['nome_projeto']}. Importante frisar que o código deve ser sucinto e profissional.
+  """
   resposta = chat.send_message(prompt_final)
   try:
     json_string_limpa = resposta.text.strip().removeprefix("```json").removesuffix("```")
