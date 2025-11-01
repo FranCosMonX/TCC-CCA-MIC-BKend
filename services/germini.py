@@ -17,7 +17,10 @@ def Enviar_Mensagem(mensagem:str):
   return response
 
 def atualiza_api_key(chave:str):
-  """_summary_
+  """
+  Unica função que permite atualizar a chave de acesso à IA. 
+  Deve ser executada ao menos uma vez, já que o valor inicial é nulo.
+  Essa função já faz o teste de conexão com a API da IA.
 
   Args:
       chave (str): chave para acessar a API  da IA.
@@ -50,23 +53,23 @@ def atualiza_api_key(chave:str):
   print("Chave de API atualizada e objetos recriados com sucesso.")
 
 def verificar_conexao():
-    """
-    Verifica a conexão com a API do Gemini sem enviar uma mensagem de texto.
+  """
+  Verifica a conexão com a API do Gemini sem enviar uma mensagem de texto.
 
-    Retorna:
-        bool: True se a conexão for bem-sucedida, False caso contrário.
-    """
-    #funciona como um ping
-    try:
-      for model in genai.list_models():
-          break
-      
-      # Se a linha acima for executada sem erros, a conexão está funcionando.
-      return True
+  Retorna:
+    bool: True se a conexão for bem-sucedida, False caso contrário.
+  """
+  #funciona como um ping
+  try:
+    for model in genai.list_models():
+      break
     
-    except Exception as e:
-      print(f"Erro na conexão com a API: {e}")
-      return False
+    # Se a linha acima for executada sem erros, a conexão está funcionando.
+    return True
+  
+  except Exception as e:
+    print(f"Erro na conexão com a API: {e}")
+    return False
 
 def carregar_dados_salvos():
   """
@@ -125,7 +128,7 @@ def gerar_arquivos():
     
     # Gerando o arquivo final JSON
     with open("resumo_conversa_final.json", "w", encoding="utf-8") as f:
-        json.dump(dados_json, f, indent=4)
+      json.dump(dados_json, f, indent=4)
     
     print("Resumo final em JSON gerado com sucesso!")
     print("\nConteúdo do arquivo 'resumo_conversa_final.json':")
@@ -152,19 +155,3 @@ def iniciar():
                 """
                 
   Enviar_Mensagem(prompting)
-# resposta = Enviar_Mensagem(prompting)
-# print(resposta.text)
-# Enviar_Mensagem("Gere um hello world de circuitos embarcados na linugagem C")
-# gerar_arquivos()
-
-# if resposta:
-#   try:
-#       # Tenta carregar a resposta como um JSON
-#       # O .text garante que estamos trabalhando com a string do JSON
-#       resposta_json = json.loads(resposta.text)
-#       print(json.dumps(resposta_json, indent=2))
-#   except json.JSONDecodeError as e:
-#       print(f"Erro: A resposta da API não é um JSON válido. Erro de decodificação: {e}")
-#       print(f"Resposta bruta da API: {resposta.text}")
-# else:
-#     print("Não foi possível obter uma resposta da API.")
