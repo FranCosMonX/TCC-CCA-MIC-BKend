@@ -67,8 +67,6 @@ def initialize_database():
         'mensagem': 'Banco de Dados inicializado com êxito.'
       }), 201
     except Exception as e:
-      print("===================================")
-      print(e)
       return jsonify({
         'mensagem': 'Houve um problema ao executar o script de criação do Banco de Dados local.'
       }), 500
