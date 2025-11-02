@@ -1,9 +1,15 @@
 {
     "numero_de_arquivos": 1,
+    "nome_projeto": "InicioComTudo",
+    "bibliotecas": [
+        "ESP32Servo",
+        "DHTesp"
+    ],
     "codigos": [
         {
-            "codigo": "void setup() {\n  pinMode(13, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}",
-            "nome_arquivo": "blink.ino"
+            "id": 1,
+            "nome_arquivo": "InicioComTudo.ino",
+            "codigo": "#include <ESP32Servo.h>\n#include <DHTesp.h>\n\nconst int DHT_PIN = 4;\nconst int SERVO_PIN = 18;\n\nDHTesp dht;\nServo meuServo;\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(100);\n  Serial.println(\"InicioComTudo - Iniciando...\");\n\n  dht.setup(DHT_PIN, DHTesp::DHT11);\n\n  meuServo.attach(SERVO_PIN);\n}\n\nvoid loop() {\n  float humidity = dht.getHumidity();\n  float temperature = dht.getTemperature();\n\n  if (dht.getStatus() == DHTesp::ERROR_NONE) {\n    Serial.print(\"Umidade: \");\n    Serial.print(humidity);\n    Serial.print(\" % | \");\n    Serial.print(\"Temperatura: \");\n    Serial.print(temperature);\n    Serial.println(\" \u00b0C\");\n  } else {\n    Serial.print(\"Erro ao ler o sensor DHT: \");\n    Serial.println(dht.getStatusString());\n  }\n\n  for (int pos = 0; pos <= 180; pos += 1) {\n    meuServo.write(pos);\n    delay(15);\n  }\n  for (int pos = 180; pos >= 0; pos -= 1) {\n    meuServo.write(pos);\n    delay(15);\n  }\n\n  delay(2000);\n}"
         }
     ]
 }

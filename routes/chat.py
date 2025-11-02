@@ -2,7 +2,8 @@ import json
 
 from flask import Blueprint, jsonify, request
 from services.germini import (
-  Enviar_Mensagem
+  Enviar_Mensagem,
+  gerar_arquivos
 )
 
 chat_bp = Blueprint("chat", __name__)
@@ -39,3 +40,12 @@ def emviar_mensagem():
     }), 200
   except Exception as e:
     return jsonify({'error': str(e)}), 500
+  
+@chat_bp.route('/gerar', methods=['POST'])
+def gerar():
+  try:
+    gerar_arquivos()
+    
+    return jsonify({'mensagem': 'solicitação recebida com sucesso'}), 200
+  except Exception as e:
+    return jsonify({'mensagem': e}), 500
