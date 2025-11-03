@@ -1,6 +1,6 @@
 from google import generativeai as genai
 from bd import obter_configuracao
-from common.exceptions import UsuarioError, SistemaError
+from common.exceptions import UsuarioError, SistemaError, JsonError, RequisicaoError
 import json
 
 genai_config = genai.types.GenerationConfig(
@@ -103,21 +103,44 @@ def alterarPrompting(apenas_mudanca:str):
   Enviar_Mensagem(f"""SISTEMA: O usuário alterou as seguintes escolhas: {apenas_mudanca}. A partir desse momento, considere os novos pedidos para os dados atualizados junto com os que
                   não foram alterados. ESSA É UMA MENSAGEM DO SISTEMA, NÃO DEVE SER CITADA PARA O USUÁRIO.""")
 
-def requisicao_to_json(dados:str):
-  try:
-    dados_limpos = dados.strip().removeprefix("```json").removesuffix("```")
-    
-    dados_json = json.loads(dados_limpos)
-      
-    print("Resumo final em JSON gerado com sucesso!")
-    print("\nConteúdo do arquivo 'resumo_conversa_final.json':")
-    print(json.dumps(dados_json, indent=4))
-  except json.JSONDecodeError as e:
-    print("Erro ao decodificar a resposta JSON. A resposta do modelo não está no formato esperado.")
-    print(f"Resposta bruta recebida: {dados}")
-    print(f"Erro: {e}")
+# def requisicao_to_json(dados:str):
+#   """
+#   Utilizado para transformar a resposta da IA em um objeto Json, considerando que ela retornará algo próximo de um objeto Json.
 
-def gerar_arquivos():
+#   Args:
+#       dados (str): _description_
+
+#   Raises:
+#       JsonError: Problema ao transformar a resposta da IA em um objeto Json.
+
+#   Returns:
+#       _type_: objeto Json.
+#   """
+#   try:
+#     dados_limpos = dados.strip().removeprefix("```json").removesuffix("```")
+    
+#     dados_json = json.loads(dados_limpos)
+      
+#     print("Resumo final em JSON gerado com sucesso!")
+#     print("\nConteúdo do arquivo 'resumo_conversa_final.json':")
+#     print(json.dumps(dados_json, indent=4))
+#     return dados_json
+#   except json.JSONDecodeError as e:
+#     print("Erro ao decodificar a resposta JSON. A resposta do modelo não está no formato esperado.")
+#     print(f"Resposta bruta recebida: {dados}")
+#     print(f"Erro: {e}")
+#     raise JsonError("Problema na função requisicao_to_json em germini.py")
+
+def solicitar_codigo_em_json():
+  """
+  Usado para solicitar dados Json a fim de criar arquivos nos diretórios de execução e instalar as bibliotecas necessarias.
+  
+  Raises:
+    JsonError: Problema ao transformar a resposta da IA em um objeto Json.
+
+  Returns:
+    dados (json): objeto Json.
+  """
   configuracao = obter_configuracao()
   gerador = genai_model_arq.start_chat(history=historico())
   prompt_final = f"""
@@ -129,25 +152,30 @@ def gerar_arquivos():
   É importante que seja preenchido corretamente as listas de códigos e a lista de bibliotecas. Elas devem ser compativeis para executar no arduino-cli. As bibliotecas devem listar o nome ou ID completamente correto e atualizado.
   Além disso, é importante destacar que o arquivo principal deve conter o nome {configuracao['nome_projeto']}. Importante frisar que o código deve ser sucinto e profissional.
   """
-  resposta = chat.send_message(prompt_final)
   try:
-    json_string_limpa = resposta.text.strip().removeprefix("```json").removesuffix("```")
-    
-    # Agora a string é um JSON válido e pode ser processada
-    dados_json = json.loads(json_string_limpa)
-    
-    # Gerando o arquivo final JSON
-    with open("resumo_conversa_final.json", "w", encoding="utf-8") as f:
-      json.dump(dados_json, f, indent=4)
-    
-    print("Resumo final em JSON gerado com sucesso!")
-    print("\nConteúdo do arquivo 'resumo_conversa_final.json':")
-    print(json.dumps(dados_json, indent=4))
+    resposta = chat.send_message(prompt_final)
+    try:
+      json_string_limpa = resposta.text.strip().removeprefix("```json").removesuffix("```")
       
-  except json.JSONDecodeError as e:
-    print("Erro ao decodificar a resposta JSON. A resposta do modelo não está no formato esperado.")
-    print(f"Resposta bruta recebida: {resposta.text}")
-    print(f"Erro: {e}")
+      # Agora a string é um JSON válido e pode ser processada
+      dados_json = json.loads(json_string_limpa)
+      
+      # Gerando o arquivo final JSON
+      with open("resumo_conversa_final.json", "w", encoding="utf-8") as f:
+        json.dump(dados_json, f, indent=4)
+      
+      print("Resumo final em JSON gerado com sucesso!")
+      print("\nConteúdo do arquivo 'resumo_conversa_final.json':")
+      print(json.dumps(dados_json, indent=4))
+      
+      return dados_json
+    except json.JSONDecodeError as e:
+      # print("Erro ao decodificar a resposta JSON. A resposta do modelo não está no formato esperado.")
+      # print(f"Resposta bruta recebida: {resposta.text}")
+      # print(f"Erro: {e}")
+      raise JsonError("Problema na função solicitar_codigo_em_json em germini.py")
+  except:
+    raise RequisicaoError("Houve um problema inesperado ao mandar uma solicitação de resumo e geração de código.")
 
 def iniciar():
   configuracao = obter_configuracao()

@@ -3,7 +3,10 @@ import json
 from flask import Blueprint, jsonify, request
 from services.germini import (
   Enviar_Mensagem,
-  gerar_arquivos
+  solicitar_codigo_em_json
+)
+from common.exceptions import (
+  JsonError
 )
 
 chat_bp = Blueprint("chat", __name__)
@@ -44,8 +47,10 @@ def emviar_mensagem():
 @chat_bp.route('/gerar', methods=['POST'])
 def gerar():
   try:
-    gerar_arquivos()
+    solicitar_codigo_em_json()
     
     return jsonify({'mensagem': 'solicitação recebida com sucesso'}), 200
+  except JsonError as jE:
+    return jsonify({'mensagem': jE.mensagem}), 500
   except Exception as e:
     return jsonify({'mensagem': e}), 500
