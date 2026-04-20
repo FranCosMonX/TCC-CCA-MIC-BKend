@@ -63,10 +63,3 @@ def criar_arquivo_bat(caminho: str, text:str):
       arq.write(text)
   except:
     SistemaError("Houve um erro ao criar o arquivo bat no caminho especificado.")
-
-def execute_bat(uri):
-    resultado = subprocess.run(uri, capture_output=True, text=True, shell=True)
-
-    print("Saída do arquivo .bat:")
-    print(resultado.stdout)  # Exibe a saída padrão
-    

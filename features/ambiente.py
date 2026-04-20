@@ -3,6 +3,8 @@ import subprocess, os
 from bd import obter_configuracao
 from common.archive import salvar_arquivo, criar_diretorios
 
+ARDUINO_CLI_EXE = 'C:\\Program Files\\Arduino CLI\\arduino-cli.exe'
+
 def preparando_ambiente(id_microcontrolador:str=None):
   """
   Utilizado para instalar o arduino-cli e configurar a placa do microcontrolador usando o arduino-cli
@@ -59,3 +61,17 @@ def instalar_bibliotecas(bibliotecas: list):
   Args:
       bibliotecas (list): _description_
   """
+  
+  RETORNO = []
+  for biblioteca in bibliotecas:
+    CODIGO = ["arduino-cli", "lib", "install", biblioteca]
+    print(CODIGO)
+    retorno = subprocess.run(CODIGO, capture_output=True, text=True)
+
+    def estaInstalado(text=str):
+      return text.find("Installed") != -1 or text.find("installed") != -1
+    RETORNO.append(estaInstalado(retorno.stdout))
+    print(retorno.stdout)
+    print(estaInstalado(retorno.stdout))
+  
+  return RETORNO

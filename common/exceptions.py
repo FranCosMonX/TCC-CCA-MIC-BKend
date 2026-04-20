@@ -13,7 +13,6 @@ class SistemaError(Exception):
   def __init__(self, mensagem=None):
     if mensagem is None:
       mensagem="Houve um problema genérico no sistema backend."
-      
     frame = inspect.stack()[1]
     caminho = os.path.abspath(frame.filename)
     linha = frame.lineno
