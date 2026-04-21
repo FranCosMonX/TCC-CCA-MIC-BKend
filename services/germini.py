@@ -14,11 +14,9 @@ chat = genai_model.start_chat()
 def Enviar_Mensagem(mensagem:str):
   try:
     response = chat.send_message(mensagem)
-    
-    with open("/historico.txt", 'w', encoding='UTF-8') as arq:
-      arq.write(historico())
     return response
-  except:
+  except Exception as e:
+    print(e)
     raise IAError("Problemas ao enviar a requisição.")
 
 def atualiza_api_key(chave:str):
@@ -105,8 +103,13 @@ def alterarPrompting(apenas_mudanca:str):
     Atualiza as escolhas do usuário no chat.
     Esta função é uma mensagem do sistema e não deve ser citada no chat.
   """
-  Enviar_Mensagem(f"""SISTEMA: O usuário alterou as seguintes escolhas: {apenas_mudanca}. A partir desse momento, considere os novos pedidos para os dados atualizados junto com os que
-                  não foram alterados. ESSA É UMA MENSAGEM DO SISTEMA, NÃO DEVE SER CITADA PARA O USUÁRIO.""")
+  print("passa aqui")
+  try:
+    Enviar_Mensagem(f"""SISTEMA: O usuário alterou as seguintes escolhas: {apenas_mudanca}. A partir desse momento, considere os novos pedidos para os dados atualizados junto com os que
+                    não foram alterados. ESSA É UMA MENSAGEM DO SISTEMA, NÃO DEVE SER CITADA PARA O USUÁRIO.""")
+  except Exception as e:
+    print(e)
+  print("recebeu a mensagem")
 
 # def requisicao_to_json(dados:str):
 #   """

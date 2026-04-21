@@ -2,5 +2,9 @@ database.bd
 venv/
 venv
 
+database.bd
+historico.txt
+*.txt
+
 __pycache__/
 __pycache__

@@ -161,17 +161,18 @@ def definir_conf_geral():
     400: Campo ou alguma entrada de usuário incorreta.
     500: Problemas com o backend.
   """
-  
+  print("problema no request")
   nome_projeto = request.json.get('nome_projeto')
   diretorio = request.json.get('diretorio')
   key_ai_api = request.json.get('key_ai_api')
   ver_codigo = request.json.get('ver_codigo')
   comentario_codigo = request.json.get('comentario_codigo')
   
+  print("problema no bd")
   configuracao = obter_configuracao()
   status_chave_verificada = configuracao['api_key_valid']
   chave_verificada = configuracao["key_ai_api"]
-  
+  print("passou para teste")
   if not status_chave_verificada:
     return jsonify({
       'mensagem': "Primeiro verifique se a chave de acesso é válida.",
@@ -195,7 +196,7 @@ def definir_conf_geral():
       'mensagem': 'O caminho onde os arquivos serão salvos é invalido.',
       'campo': 'diretorio'
     }), 400
-  
+  print("passouu final")
   try:
     msg = atualizar_dadosConf_gerais(nome_projeto, diretorio,ver_codigo,comentario_codigo)
     alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}, o nome do projeto é: {nome_projeto}")
@@ -306,7 +307,7 @@ def definir_usr():
       'mensagem': 'É necessário passar uma chave de acesso para a IA que seja válida'
     }), 400
   
-  if len(usr) < 2 or not usr:
+  if usr is not None and (len(usr) < 2 or not usr):
     return jsonify({
       'mensagem': 'O campo não pode ser nulo ou conter menos de 3 carcteres'
     }), 400
