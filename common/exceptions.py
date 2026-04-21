@@ -28,7 +28,6 @@ class SistemaError(Exception):
   def __str__(self):
     return (
       f"{self.mensagem}\n"
-      f"→ Local: {self.caminho}:{self.linha} (função '{self.funcao}')"
     )
 class AmbienteError(SistemaError):
   def __init__(self, mensagem=None):
