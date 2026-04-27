@@ -1,14 +1,16 @@
 from google import generativeai as genai
 from bd import obter_configuracao
 from common.exceptions import UsuarioError, SistemaError, JsonError, IAError, RequisicaoError
-import json
+import json, os
+
+modelo_default = "gemini-3.1-flash-lite-preview"
 
 genai_config = genai.types.GenerationConfig(
   temperature=0.9,
   candidate_count=1
 )
-genai_model = genai.GenerativeModel('gemini-2.0-flash-live')
-genai_model_arq = genai.GenerativeModel('gemini-2.0-flash-live')
+genai_model = genai.GenerativeModel(modelo_default)
+genai_model_arq = genai.GenerativeModel(modelo_default)
 chat = genai_model.start_chat()
 
 def Enviar_Mensagem(mensagem:str):
@@ -17,9 +19,9 @@ def Enviar_Mensagem(mensagem:str):
     return response
   except Exception as e:
     print(e)
-    raise IAError("Problemas ao enviar a requisição.")
+    raise IAError("DEBUG - Problemas ao enviar a requisição. Executado na função Enviar_Mensagem() em germini.py")
 
-def atualiza_api_key(chave:str):
+def atualiza_api_key_ou_modelo(chave:str, modelo = modelo_default):
   """
   Unica função que permite atualizar a chave de acesso à IA. 
   Deve ser executada ao menos uma vez, já que o valor inicial é nulo.
@@ -36,7 +38,7 @@ def atualiza_api_key(chave:str):
   try:
     genai.configure(api_key=chave)
   except Exception as e:
-    raise UsuarioError(f"Erro ao configurar a nova chave de API: {e}")
+    raise UsuarioError(f"DEBUG - Erro ao configurar a nova chave de API: {e}. Executado na função atualizar_api_key() em germini.py")
 
   genai_config = genai.types.GenerationConfig(
     temperature=0.9,
@@ -45,15 +47,15 @@ def atualiza_api_key(chave:str):
 
   try:
     if not verificar_conexao():
-      raise UsuarioError(f"Erro ao configurar a nova chave de API: {e}")
+      raise UsuarioError(f"DEBUG - Erro ao configurar a nova chave de API: {e}. Executado na função atualizar_api_key() em germini.py")
   except Exception as e:
-    raise UsuarioError(f"Erro ao configurar a nova chave de API: {e}")
+    raise UsuarioError(f"DEBUG - Erro ao configurar a nova chave de API: {e}. Executado na função atualizar_api_key() em germini.py")
 
-  genai_model = genai.GenerativeModel('gemini-2.5-flash')
-  genai_model_arq = genai.GenerativeModel('gemini-2.5-flash')
+  genai_model = genai.GenerativeModel(modelo)
+  genai_model_arq = genai.GenerativeModel(modelo)
   chat = genai_model.start_chat()
   
-  print("Chave de API atualizada e objetos recriados com sucesso.")
+  print("DEBUG - Chave de API atualizada e objetos recriados com sucesso.")
 
 def verificar_conexao():
   """
@@ -65,127 +67,101 @@ def verificar_conexao():
   #funciona como um ping
   try:
     for model in genai.list_models():
+      # print(model) if 'generateContent' in model.supported_generation_methods else f"DEBUG - NOT A USE {model}"
       break
-    
+
     # Se a linha acima for executada sem erros, a conexão está funcionando.
     return True
   
   except Exception as e:
-    print(f"Erro na conexão com a API: {e}")
+    print(f"DEBUG - Erro na conexão com a API: {e}. Executado na função verificar_conexao() em germini.py")
     return False
-
-# FUNÇÃO INUTIL COM A CRIAÇÃO DO ENDPOINT CARREGARDADOS
-# def carregar_dados_salvos():
-#   """
-#   Descrição:
-  
-#   Carregar os dados salvos no Banco de Dados
-#   """
-  
-#   if not verificar_conexao():
-#     try:
-#       configuracao = obter_configuracao()
-#       if configuracao['key_ai_api'] is None:
-#         raise UsuarioError("Não foi cadastrado chave de acesso da IA.")
-#       atualiza_api_key(configuracao['key_ai_api'])
-#     except UsuarioError as errUser:
-#       raise UsuarioError( errUser.mensagem)
-#     except Exception as e:
-#       print(e)
-#       raise SistemaError("Houve um erro na função carregar_dados_salvos em Germini.py")
 
 def historico():
   """Retorna o histórico do chat."""
   return chat.history
+
+def salva_historico():
+  """Salva o histórico da conversa com o Gemini em um arquivo txt."""
+  URI_BASE = os.getcwd()
+  
+  try:
+    with open(os.path.join(URI_BASE, "historico.txt"), mode="w", encoding="utf-8") as arquivo:
+      arquivo.write(chat.history)
+    return True
+  except:
+    print("DEBUG - ERRO AO SALVAR ARQUIVO 'historico.txt'. Executado na função salva_historico() em germini.py")
+    return False
 
 def alterarPrompting(apenas_mudanca:str):
   """
     Atualiza as escolhas do usuário no chat.
     Esta função é uma mensagem do sistema e não deve ser citada no chat.
   """
-  print("passa aqui")
+  
   try:
     Enviar_Mensagem(f"""SISTEMA: O usuário alterou as seguintes escolhas: {apenas_mudanca}. A partir desse momento, considere os novos pedidos para os dados atualizados junto com os que
                     não foram alterados. ESSA É UMA MENSAGEM DO SISTEMA, NÃO DEVE SER CITADA PARA O USUÁRIO.""")
   except Exception as e:
-    print(e)
-  print("recebeu a mensagem")
-
-# def requisicao_to_json(dados:str):
-#   """
-#   Utilizado para transformar a resposta da IA em um objeto Json, considerando que ela retornará algo próximo de um objeto Json.
-
-#   Args:
-#       dados (str): _description_
-
-#   Raises:
-#       JsonError: Problema ao transformar a resposta da IA em um objeto Json.
-
-#   Returns:
-#       _type_: objeto Json.
-#   """
-#   try:
-#     dados_limpos = dados.strip().removeprefix("```json").removesuffix("```")
-    
-#     dados_json = json.loads(dados_limpos)
-      
-#     print("Resumo final em JSON gerado com sucesso!")
-#     print("\nConteúdo do arquivo 'resumo_conversa_final.json':")
-#     print(json.dumps(dados_json, indent=4))
-#     return dados_json
-#   except json.JSONDecodeError as e:
-#     print("Erro ao decodificar a resposta JSON. A resposta do modelo não está no formato esperado.")
-#     print(f"Resposta bruta recebida: {dados}")
-#     print(f"Erro: {e}")
-#     raise JsonError("Problema na função requisicao_to_json em germini.py")
-
-def solicitar_codigo_em_json():
-  """
-  Usado para solicitar dados Json a fim de criar arquivos nos diretórios de execução e instalar as bibliotecas necessarias.
+    raise IAError("DEBUG - Houve um erro ao receber alguma mensagem da API da IA. Executado na função alterarPrompting() em germini.py")
   
-  Raises:
-    JsonError: Problema ao transformar a resposta da IA em um objeto Json.
-
-  Returns:
-    dados (json): objeto Json.
-  """
+def solicitar_codigo_em_json():
   configuracao = obter_configuracao()
-  gerador = genai_model_arq.start_chat(history=historico())
+  
+  # 1. Forçamos o modelo a responder APENAS JSON via configuração
+  # Usamos o Flash-Lite para máxima economia nesta tarefa técnica
+  model_lite = genai.GenerativeModel(
+    model_name=modelo_default,
+    generation_config={"response_mime_type": "application/json"}
+  )
+
   prompt_final = f"""
-  Com base em toda a conversa com o usuário, gere os dados final em formato JSON, com as seguintes chaves
-  'numero_de_arquivos': '',
-  'nome_projeto': '',
-  'bibliotecas': []
-  'codigos': sendo códigos contendo uma lista de objetos com indice 'codigo', 'id' e 'nome_arquivo'.
-  É importante que seja preenchido corretamente as listas de códigos e a lista de bibliotecas. Elas devem ser compativeis para executar no arduino-cli. As bibliotecas devem listar o nome ou ID completamente correto e atualizado.
-  O nome do projeto e do arquivo principal deve ser exatamente {configuracao['nome_projeto']}. Importante frisar que o código deve ser sucinto e profissional.
-  é obrigado que retorne apenas o objeto json
+  Gere um JSON estrito com base no histórico da conversa para o projeto de sistemas embarcados.
+  Estrutura obrigatória:
+  {{
+    "numero_de_arquivos": int,
+    "nome_projeto": "{configuracao['nome_projeto']}",
+    "bibliotecas": ["nome_da_biblioteca_arduino"],
+    "codigos": [
+      {{
+        "id": int,
+        "nome_arquivo": "string",
+        "codigo": "string_do_codigo_cpp"
+      }}
+    ]
+  }}
+  Regras: 
+  - O código deve ser compatível com {configuracao['microcontrolador']}.
+  - Use apenas nomes de bibliotecas válidos para o arduino-cli.
   """
+
   try:
-    resposta = chat.send_message(prompt_final)
+    # 2. Iniciamos o chat com o histórico para manter o contexto
+    sessao = model_lite.start_chat(history=chat.history)
+    resposta = sessao.send_message(prompt_final)
+
+    print(f"RESPOSTAS $$$$$$$$$$$$$$$ {resposta}")
+    
+    # 3. Como usamos application/json, a resposta já vem como string JSON pura
     try:
-      json_string_limpa = resposta.text.strip().removeprefix("```json").removesuffix("```")
+      dados_json = json.loads(resposta.text)
       
-      # Agora a string é um JSON válido e pode ser processada
-      dados_json = json.loads(json_string_limpa)
-      
-      # Gerando o arquivo final JSON
+      # 4. Gravação segura (sem caminhos de raiz '/')
       with open("resumo_conversa_final.json", "w", encoding="utf-8") as f:
-        json.dump(dados_json, f, indent=4)
-      
-      print("Resumo final em JSON gerado com sucesso!")
-      print("\nConteúdo do arquivo 'resumo_conversa_final.json':")
-      print(json.dumps(dados_json, indent=4))
+        json.dump(dados_json, f, indent=2, ensure_ascii=False)
       
       return dados_json
-    except json.JSONDecodeError as e:
-      print("Erro ao decodificar a resposta JSON. A resposta do modelo não está no formato esperado.")
-      print(f"Resposta bruta recebida: {resposta.text}")
-      print(f"Erro: {e}")
-      raise JsonError("Problema na função solicitar_codigo_em_json em germini.py")
-  except:
-    raise RequisicaoError("Houve um problema inesperado ao mandar uma solicitação de resumo e geração de código.")
 
+    except json.JSONDecodeError as e:
+      # Log detalhado para o seu terminal (ajuda no Erro 500)
+      print(f"DEBUG - Erro no JSON do Gemini: {e}")
+      print(f"DEBUG - Conteúdo bruto: {resposta.text}")
+      raise JsonError("A IA gerou um JSON inválido.")
+
+  except Exception as e:
+    print(f"DEBUG - Falha na requisição: {e}")
+    raise RequisicaoError(f"Erro na comunicação com a API: {e}")
+    
 def iniciar():
   configuracao = obter_configuracao()
   prompting = f"""Você é uma assistente de um usuário que busca fazer sistemas embarcados para microcontroladores.

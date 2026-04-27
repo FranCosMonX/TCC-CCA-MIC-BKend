@@ -31,12 +31,123 @@ def init_db():
     with app.open_resource('./models/configuracao.sql', mode='r') as f:
       db.cursor().executescript(f.read())
     db.commit()
+
+def add_modelo_ia(ia_name, modelo_disponivel):
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('INSERT INTO ia(nome_ia, modelo_disponivel) VALUES (?,?)', (ia_name, modelo_disponivel))
+    db.commit()
+    print('DEBUG - Modelo salvo como sucesso')
+  except sqlite3.Error as e:
+    raise Exception(f'error: {str(e)}')
+  finally:
+    db.close()
+    print('funcao finalizada')
+
+def obter_ias_disponiveis():
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT DISTINCT nome_ia FROM ia")
+    resultado = cursor.fetchall()
+
+    ias_disponiveis = [dict(linha) for linha in resultado]
+    resultado = []
+    for index, ia in enumerate(ias_disponiveis):
+      resultado.append({"aux_map_key":index, "nome_ia": ia['nome_ia']})
+    return resultado
+  except Exception as e:
+    print(f"DEBUG - ERROR bd.py em obter_ias_disponiveis() - {e}")
+    return None
+  finally:
+    db.close()
+
+def obter_modelos_disponiveis():
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM ia")
+    resultado = cursor.fetchall()
+
+    ias_disponiveis = [dict(linha) for linha in resultado]
+    print(ias_disponiveis)
+    return ias_disponiveis
+  except Exception as e:
+    print(f"DEBUG - ERROR bd.py em obter_ias_disponiveis() - {e}")
+    return None
+  finally:
+    db.close()
     
+def obter_modelo_por_nome_ia(nome_ia:str):
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT * FROM ia WHERE nome_ia = ?', (nome_ia,))
+    resultado = cursor.fetchall()
+
+    resultado = [dict(linha) for linha in resultado]
+    
+    if len(resultado) == 0:
+      return None
+    print(resultado)
+    return resultado
+  except Exception as e:
+    raise Exception(f' DEBUG - error em obter_modelo_por_nome_ia em bd.py: {str(e)}')
+  finally:
+    db.close()
+  
+def obter_modelo_por_id(id):
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT modelo_disponivel FROM ia WHERE id = ?', (id,))
+    resultado = cursor.fetchone()
+
+    if resultado is None:
+      print("DEBUG - ID não encontrado.")
+      return None
+    resultado = dict(resultado)
+    return resultado
+  except Exception as e:
+    raise Exception(f' DEBUG - error em obter_modelo_por_nome_ia em bd.py: {str(e)}')
+  finally:
+    db.close()
+
+def tem_nome_ia(nome_ia: str):
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT 1 FROM ia WHERE nome_ia = ?', (nome_ia,))
+    resultado = cursor.fetchone()
+
+    return resultado is not None
+  except Exception as e:
+    raise Exception(f' DEBUG - error em obter_modelo_por_nome_ia em bd.py: {str(e)}')
+  finally:
+    db.close()
+
+def tem_modelo_da_ia(nome:str, modelo:str):
+  """
+  Utilizado para verificar e resgatar o id de um modelo de ia em especifico
+  """
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT id FROM ia WHERE nome_ia = ? and modelo_disponivel = ?', (nome,modelo,))
+    resultado = cursor.fetchone()
+
+    return None if resultado is None else dict(resultado)['id']
+  except Exception as e:
+    raise Exception(f' DEBUG - error em obter_modelo_por_nome_ia em bd.py: {str(e)}')
+  finally:
+    db.close()
+
 def criar_config_default():
   """
   ### Descrição
   Cria um indice contendo os dados
-  `apelido, diretorio, microcontrolador, ai, key_ai_api = None, None, None, None, None` e `ver_codigo, comentario_codigo = False, False`
+  `apelido, diretorio, microcontrolador, id_ia, key_ai_api = None, None, None, None, None` e `ver_codigo, comentario_codigo = False, False`
   
   ### Exceções
   Caso dê algum erro na criação, deverá gerar uma exceção do Banco de Dados ou da própria aplicação.
@@ -48,7 +159,7 @@ def criar_config_default():
     resultado = cursor.fetchall()
     
     if len(resultado) == 0:
-      cursor.execute('INSERT INTO configuracao(nome_projeto,apelido,diretorio,microcontrolador,ia,key_ai_api,ver_codigo,comentario_codigo,api_key_valid,id_microcontrolador) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      cursor.execute('INSERT INTO configuracao(nome_projeto,apelido,diretorio,microcontrolador,id_ia,key_ai_api,ver_codigo,comentario_codigo,api_key_valid,id_microcontrolador) VALUES (?,?,?,?,?,?,?,?,?,?)',
                      (None, None, None, None, None, None, 0, 0, 0, None))
       db.commit()
     else:
@@ -69,7 +180,7 @@ def resetar_configs():
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('UPDATE configuracao SET nome_projeto = ?, apelido = ?, diretorio = ?, microcontrolador = ?, ia = ?, key_ai_api = ?, ver_codigo = ?, comentario_codigo = ?, api_key_valid = ?, id_microcontrolador = ? WHERE id = ?', (None, None, None, None, None, None, False, False, False, None, 1))
+    cursor.execute('UPDATE configuracao SET nome_projeto = ?, apelido = ?, diretorio = ?, microcontrolador = ?, id_ia = ?, key_ai_api = ?, ver_codigo = ?, comentario_codigo = ?, api_key_valid = ?, id_microcontrolador = ? WHERE id = ?', (None, None, None, None, None, None, False, False, False, None, 1))
     db.commit()
   except Exception as e:
     print(e)
@@ -79,31 +190,20 @@ def obter_configuracao():
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM configuracao')
-    dados = cursor.fetchall()
+    cursor.execute('SELECT * FROM configuracao JOIN ia ON configuracao.id_ia = ia.id')
+    dados = cursor.fetchone()
     db.close()
     
     if len(dados) == 0:
       raise Exception(f'Não há configurações salvas. Registre algo primeiro.')
     
-    config = dados[0]
-    return {
-      "id": config["id"],
-      "nome_projeto": config["nome_projeto"],
-      "apelido": config["apelido"],
-      "diretorio": config["diretorio"],
-      "microcontrolador": config["microcontrolador"],
-      "id_microcontrolador": config["id_microcontrolador"],
-      "ia": config["ia"],
-      "key_ai_api": config["key_ai_api"],
-      "api_key_valid": config["api_key_valid"],
-      "ver_codigo": config["ver_codigo"],
-      "comentario_codigo": config["comentario_codigo"],
-    }
+    config = dict(dados)
+    print(config)
+    return config
   except Exception as e:
     raise Exception(f'error: {str(e)}')
 
-def atualiza_chave_acesso_ai(ia: str, api_key:str):
+def atualiza_chave_acesso_ai(ia, api_key:str):
   """
   Unica forma de atualizar a chave de acesso da AI.
   
@@ -116,7 +216,7 @@ def atualiza_chave_acesso_ai(ia: str, api_key:str):
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('UPDATE configuracao SET ia = ?, key_ai_api = ? WHERE id = ?', (ia, api_key, 1))
+    cursor.execute('UPDATE configuracao SET id_ia = ?, key_ai_api = ? WHERE id = ?', (ia, api_key, 1))
     db.commit()
     return 'Dados salvos com sucesso.'
   except Exception as e:

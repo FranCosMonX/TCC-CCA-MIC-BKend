@@ -9,16 +9,16 @@ from bd import (
   init_db,
   obter_configuracao,
   resetar_configs,
+  tem_modelo_da_ia
 )
 from common.exceptions import (
   AmbienteError,
-  SistemaError,
   UsuarioError,
 )
 from features.ambiente import (
   preparando_ambiente,
 )
-from services.germini import atualiza_api_key, alterarPrompting, iniciar
+from services.germini import atualiza_api_key_ou_modelo, alterarPrompting, iniciar
 
 configuracao_bp = Blueprint("configuracao", __name__)
 
@@ -42,7 +42,7 @@ def inicializacao_de_dados():
       }), 200
     
     return jsonify({
-      'mensagem': 'teste'}), 204
+      'mensagem': 'Os arquivos já existem, mas falta pendências de dados.'}), 204
   except:
     try:
       init_db()
@@ -52,11 +52,12 @@ def inicializacao_de_dados():
         'mensagem': 'Banco de Dados inicializado com êxito.'
       }), 201
     except Exception as e:
+      print(f"DEBUG = ERROR: {e}")
       return jsonify({
         'mensagem': 'Houve um problema ao executar o script de criação do Banco de Dados local.'
       }), 500
       
-@configuracao_bp.route('/RemoverConfiguracao', methods=['POST'])
+@configuracao_bp.route('/RemoverConfiguracao', methods=['DELETE'])
 def remover_configuracao():
   """
   Usado para remover todas as configurações salvas no banco de dados.
@@ -88,7 +89,7 @@ def carregar_configuracao():
     mensagem += 'Não há dados suficientes para preparar o ambiente de execução de código.'
   
   try:
-    atualiza_api_key(configuracao['key_ai_api'])
+    atualiza_api_key_ou_modelo(configuracao['key_ai_api'])
     mensagem += "Conexão com a IA realizada com êxito."
     execucao[1] = True
   except Exception as e:
@@ -126,15 +127,22 @@ def verifica_conexao():
   """
   ia = request.json.get('ia')
   api = request.json.get('key_ai_api')
+  modelo = request.json.get('modelo')
 
-  if ia != "Germini":
+  if ia is None or modelo is None or ia == "" or modelo == "":
     return jsonify({
-      'mensagem': "A aplicação só suporta a ligação com o Germini no momento."
+      'mensagem': "Faltam dados para verificar a conexão com o servidor da IA."
+    }), 400
+
+  id_modelo_ia = tem_modelo_da_ia(ia, modelo)
+  if id_modelo_ia is None:
+    return jsonify({
+      'mensagem': "A aplicação só suporta a ligação com alguns modelos no momoento."
     }), 400
 
   try:
-    atualiza_api_key(api)
-    atualiza_chave_acesso_ai(ia, api)
+    atualiza_api_key_ou_modelo(api, modelo)
+    atualiza_chave_acesso_ai(id_modelo_ia, api)
     edit_validacao_api_key(True)
     return jsonify({
       'mensagem': 'Conectado com sucesso'
@@ -161,18 +169,17 @@ def definir_conf_geral():
     400: Campo ou alguma entrada de usuário incorreta.
     500: Problemas com o backend.
   """
-  print("problema no request")
   nome_projeto = request.json.get('nome_projeto')
   diretorio = request.json.get('diretorio')
   key_ai_api = request.json.get('key_ai_api')
   ver_codigo = request.json.get('ver_codigo')
   comentario_codigo = request.json.get('comentario_codigo')
   
-  print("problema no bd")
+  
   configuracao = obter_configuracao()
   status_chave_verificada = configuracao['api_key_valid']
   chave_verificada = configuracao["key_ai_api"]
-  print("passou para teste")
+  
   if not status_chave_verificada:
     return jsonify({
       'mensagem': "Primeiro verifique se a chave de acesso é válida.",
@@ -188,7 +195,7 @@ def definir_conf_geral():
   if not nome_projeto:
     return jsonify({
       'mensagem': 'O campo não pode ser nulo',
-      'campo': 'nomeDoProjeto'
+      'campo': 'nome_projeto'
     }), 400
   
   if not diretorio or len(diretorio) < 3:

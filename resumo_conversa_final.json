@@ -1,15 +1,12 @@
 {
-    "numero_de_arquivos": 1,
-    "nome_projeto": "InicioComTudo",
-    "bibliotecas": [
-        "OneWire",
-        "DallasTemperature"
-    ],
-    "codigos": [
-        {
-            "id": 0,
-            "nome_arquivo": "InicioComTudo.ino",
-            "codigo": "#include <OneWire.h>\n#include <DallasTemperature.h>\n\nconst int ONE_WIRE_BUS = 4;\n\nOneWire oneWire(ONE_WIRE_BUS);\n\nDallasTemperature sensors(&oneWire);\n\nvoid setup() {\n  Serial.begin(115200);\n  sensors.begin();\n}\n\nvoid loop() {\n  sensors.requestTemperatures();\n  float temperatureC = sensors.getTempCByIndex(0);\n  \n  if (temperatureC != DEVICE_DISCONNECTED_C) {\n    Serial.print(\"Temperatura: \");\n    Serial.print(temperatureC);\n    Serial.println(\" \u00b0C\");\n  } else {\n    Serial.println(\"Erro ao ler o sensor DS18B20\");\n  n  }\n  delay(2000);\n}"
-        }
-    ]
+  "numero_de_arquivos": 1,
+  "nome_projeto": "Blink",
+  "bibliotecas": [],
+  "codigos": [
+    {
+      "id": 1,
+      "nome_arquivo": "semaforo.ino",
+      "codigo": "const int ledVerde = 11;\nconst int ledAmarelo = 12;\nconst int ledVermelho = 13;\n\nvoid setup() {\n  pinMode(ledVerde, OUTPUT);\n  pinMode(ledAmarelo, OUTPUT);\n  pinMode(ledVermelho, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(ledVerde, HIGH);\n  delay(5000);\n  digitalWrite(ledVerde, LOW);\n  digitalWrite(ledAmarelo, HIGH);\n  delay(2000);\n  digitalWrite(ledAmarelo, LOW);\n  digitalWrite(ledVermelho, HIGH);\n  delay(5000);\n  digitalWrite(ledVermelho, LOW);\n}"
+    }
+  ]
 }
