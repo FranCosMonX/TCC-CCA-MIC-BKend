@@ -4,9 +4,41 @@ Sistema principal da aplicação CCA Mic (Construtor de Códigos Automáticos pa
 
 O sistema faz parte de um protótipo de Trabalho de Conclusão de Curso (TCC) e tem como objetivo intermediar a comunicação entre o usuário e uma Inteligência Artificial, além de automatizar o desenvolvimento de Sistemas Embarcados. Com isso, o usuário não precisa configurar manualmente todo o ambiente de desenvolvimento para produzir seus projetos, reduzindo a complexidade do processo. Além disso, a aplicação oferece maior isolamento durante a execução, garantindo que a Inteligência Artificial não tenha acesso direto aos arquivos pessoais da máquina do usuário.
 
-Por se tratar de um protótipo acadêmico, o sistema ainda não implementa mecanismos robustos de segurança para proteção contra acessos indevidos ou ataques de terceiros, principalmente quando configurado para acesso remoto ou disponibilizado online.
+# Arquitetura da Aplicação
 
----
+O backend foi desenvolvido utilizando o framework **Flask** e atua como responsável por:
+
+- Receber requisições do frontend;
+- Intermediar chamadas para APIs de Inteligência Artificial;
+- Processar respostas geradas pela IA;
+- Preparar automaticamente ambientes de desenvolvimento;
+- Gerar arquivos de código e configuração;
+- Executar processos de compilação;
+- Gravar o proojeto em um microcontroladores especificado.
+
+A separação entre frontend e backend permite que a aplicação seja utilizada em diferentes plataformas e interfaces sem comprometer a lógica principal do sistema.
+
+## Segurança e Limitações
+
+Por se tratar de um protótipo acadêmico, o sistema ainda não implementa mecanismos robustos de segurança para ambientes de produção.
+
+Atualmente:
+
+- Não há proteção avançada contra acessos indevidos;
+- Não existem mecanismos completos de autenticação;
+- O sistema não foi projetado para exposição pública na internet;
+- O uso remoto deve ser realizado com cautela.
+
+Portanto, recomenda-se utilizar o sistema apenas em ambientes controlados para fins acadêmicos, testes e desenvolvimento.
+
+# Ambiente de Desenvolvimento
+
+O sistema foi desenvolvido utilizando:
+
+- Python;
+- Flask;
+- Ambiente virtual (`venv`);
+- VSCode como IDE principal.
 
 ## Ambiente de Execução
 
@@ -51,3 +83,14 @@ O sistema tem como objetivo abstrair operações complexas para usuários que n�
 3. Gerar arquivos de código-fonte e arquivos de configuração necessários para compilação e execução do projeto;
 
 4. Realizar a gravação do código no microcontrolador, desde que não existam erros de compilação, utilizando conexão USB por meio de comunicação serial.
+
+---
+
+# Integração com o Frontend
+
+O backend foi projetado para funcionar em conjunto com o frontend do CCA MIC, desenvolvido utilizando React e Vite. 
+> Frontend: [https://github.com/FranCosMonX/TCC-CCA-MIC-ftend](https://github.com/FranCosMonX/TCC-CCA-MIC-ftend)
+
+Enquanto o frontend fornece a interface de interação com o usuário, o backend é responsável por executar toda a lógica de processamento, comunicação com APIs externas e manipulação do ambiente de desenvolvimento.
+
+Essa separação permite maior modularidade e facilita futuras expansões da aplicação.
