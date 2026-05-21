@@ -8,6 +8,8 @@ from bd import (
   edit_validacao_api_key,
   init_db,
   obter_configuracao,
+  get_mic_by_id,
+  get_all_mic,
   resetar_configs,
   tem_modelo_da_ia
 )
@@ -114,48 +116,6 @@ def carregar_configuracao():
       return jsonify({
         'mensagem': e
       }), 500
-  
-@configuracao_bp.route('/verificaConexao', methods=['POST'])
-def verifica_conexao():
-  """
-  Usado para verificar a conexão com a AI. É enviado uma requisição simples.
-  Returns:
-  
-    200: Conexão bem sucedida.
-    400: Campo ou alguma entrada de usuário incorreta.
-    500: Problemas com o backend.
-  """
-  ia = request.json.get('ia')
-  api = request.json.get('key_ai_api')
-  modelo = request.json.get('modelo')
-
-  if ia is None or modelo is None or ia == "" or modelo == "":
-    return jsonify({
-      'mensagem': "Faltam dados para verificar a conexão com o servidor da IA."
-    }), 400
-
-  id_modelo_ia = tem_modelo_da_ia(ia, modelo)
-  if id_modelo_ia is None:
-    return jsonify({
-      'mensagem': "A aplicação só suporta a ligação com alguns modelos no momoento."
-    }), 400
-
-  try:
-    atualiza_api_key_ou_modelo(api, modelo)
-    atualiza_chave_acesso_ai(id_modelo_ia, api)
-    edit_validacao_api_key(True)
-    return jsonify({
-      'mensagem': 'Conectado com sucesso'
-    }), 200
-  except UsuarioError as errU:
-    return jsonify({
-      'mensagem': errU.mensagem
-    }), 400
-  except Exception as e:
-    return jsonify({
-      'mensagem': 'Houve um problema em armazenar chave da API_KEY.'
-    }), 500
-    
 
 @configuracao_bp.route('/configuracaoGeral', methods=['POST'])
 def definir_conf_geral():
@@ -174,7 +134,6 @@ def definir_conf_geral():
   key_ai_api = request.json.get('key_ai_api')
   ver_codigo = request.json.get('ver_codigo')
   comentario_codigo = request.json.get('comentario_codigo')
-  
   
   configuracao = obter_configuracao()
   status_chave_verificada = configuracao['api_key_valid']
@@ -234,34 +193,23 @@ def definir_conf_mic():
     500: Problemas com o backend.
   """
   id_mic = request.json.get('id_microcontrolador')
-  mic = request.json.get('microcontrolador')
   
-  if not mic:
+  if not id_mic:
     return jsonify({
       'mensagem': 'É necessário escolher o microcontrolador para continuar.'
     }), 400
   
-  #VERIFICAÇÃO INUTIL COM ENDPOINT DE VERIFICAÇÃO DE CONTEUDO CARREGAR_DADOS_ANTERIORES
-  # try:
-  #   carregar_dados_salvos()
-  # except UsuarioError as userError:
-  #   return jsonify({
-  #     'mensagem': userError.mensagem
-  #   }), 400
-  # except SistemaError as sysError:
-  #   return jsonify({
-  #     'mensagem': "Houve um erro inesperado no sistema. Contacte o desenvolvedor."
-  #   }), 500
-  
+  dados_mic = get_mic_by_id(id_mic)
+  print(dados_mic)
   try:
-    resultado = atualizar_dados_mic(id_mic,mic)
-    alterarPrompting(f"Microcontrolador: {mic}")
+    atualizar_dados_mic(id_mic)
+    alterarPrompting(f"Microcontrolador: {dados_mic['nome']}, {dados_mic['fqbn']}")
   except Exception as e:
     print(e)
     return jsonify({'mensagem': str(e)}), 500
   
   try:
-    preparando_ambiente(id_mic)
+    preparando_ambiente(dados_mic['fqbn'])
     return jsonify({'mensagem': "Ambiente de trabalho configurado com êxito."}), 200
   except UsuarioError as uE:
     return jsonify({'mensage,': uE.mensagem}), 400
@@ -288,46 +236,3 @@ def get_dados():
     return jsonify(resultado), 200
   except Exception as e:
     return jsonify({'error': str(e)}), 500
-
-@configuracao_bp.route('/usuario', methods=['POST'])
-def definir_usr():
-  """
-  Descrição:
-  
-    Usado para atualizar ou criar o nome do usuário na aplicação. É usado apenas pela AI para se comunicar com o usuário.
-
-  Retorno:
-  
-    200: Alterado com sucesso.
-    400: Campo ou alguma entrada de usuário incorreta.
-  """
-  usr = request.json.get('usuario')
-  
-  configuracao = obter_configuracao()
-  if configuracao['microcontrolador'] is None:
-    return jsonify({
-      'mensagem': 'Antes de começar, é necessário preparar o ambiente de trabalho.'
-    }), 400
-    
-  if not configuracao['api_key_valid']:
-    return jsonify({
-      'mensagem': 'É necessário passar uma chave de acesso para a IA que seja válida'
-    }), 400
-  
-  if usr is not None and (len(usr) < 2 or not usr):
-    return jsonify({
-      'mensagem': 'O campo não pode ser nulo ou conter menos de 3 carcteres'
-    }), 400
-  
-  try:
-    resposta = atualizar_apelido(usr)
-    alterarPrompting(f"usuário: {usr}")
-    iniciar()
-    return jsonify({
-      'mensagem': resposta
-    }), 200
-  except Exception as e:
-    print(e)
-    return jsonify({
-      'error': f'{e}'
-    }), 400

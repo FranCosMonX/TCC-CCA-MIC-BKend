@@ -13,7 +13,8 @@ from features.ambiente import (
 )
 from features.projeto import (
   criar_projeto,
-  gravar_codigo
+  guardar_codigo,
+  compilar_projeto
 )
 
 chat_bp = Blueprint("chat", __name__)
@@ -56,7 +57,7 @@ def emviar_mensagem():
     return json({'mensagem' : 'Probkemas genericos'}), 500
   
 @chat_bp.route('/gerar', methods=['POST'])
-def gerar_compilar_gravar():
+def gerar_compilar():
   try:
     objeto_json = solicitar_codigo_em_json()
     if objeto_json['bibliotecas'] is not None and len(objeto_json['bibliotecas']) > 0:
@@ -80,11 +81,15 @@ def gerar_compilar_gravar():
     codigos = objeto_json['codigos']
     for code_index in codigos:
       criar_projeto()
-      gravar_codigo(code_index['codigo'],code_index['nome_arquivo'])
-    return jsonify({'mensagem': 'solicitação recebida com sucesso.'}), 200
+      guardar_codigo(code_index['codigo'],code_index['nome_arquivo'])
+
+    # 3. Compila o projeto
+    resultado_compilacao = compilar_projeto()
+    print(f"DEBUG - RESULTADO COMPILAÇÃO {resultado_compilacao}")
+    return jsonify({'mensagem': 'Projeto criado e compilado com sucesso.'}), 200
   except JsonError as jE:
-    print(e)
+    print(f"DEBUG - ERROR {jE}")
     return jsonify({'mensagem': jE.mensagem}), 500
   except Exception as e:
-    print(e)
+    print(f"DEBUG - ERROR {e}")
     return jsonify({f'mensagem: {e}'}), 500

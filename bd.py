@@ -39,6 +39,8 @@ def add_modelo_ia(ia_name, modelo_disponivel):
     cursor.execute('INSERT INTO ia(nome_ia, modelo_disponivel) VALUES (?,?)', (ia_name, modelo_disponivel))
     db.commit()
     print('DEBUG - Modelo salvo como sucesso')
+  except sqlite3.IntegrityError as ie:
+    raise UsuarioError(f"DEBUG - ERROR bd.py em ADD_MODELO_IA: {ie}")
   except sqlite3.Error as e:
     raise Exception(f'error: {str(e)}')
   finally:
@@ -101,7 +103,7 @@ def obter_modelo_por_id(id):
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT modelo_disponivel FROM ia WHERE id = ?', (id,))
+    cursor.execute('SELECT modelo_disponivel, nome_ia FROM ia WHERE id = ?', (id,))
     resultado = cursor.fetchone()
 
     if resultado is None:
@@ -159,8 +161,8 @@ def criar_config_default():
     resultado = cursor.fetchall()
     
     if len(resultado) == 0:
-      cursor.execute('INSERT INTO configuracao(nome_projeto,apelido,diretorio,microcontrolador,id_ia,key_ai_api,ver_codigo,comentario_codigo,api_key_valid,id_microcontrolador) VALUES (?,?,?,?,?,?,?,?,?,?)',
-                     (None, None, None, None, None, None, 0, 0, 0, None))
+      cursor.execute('INSERT INTO configuracao(nome_projeto,apelido,diretorio,id_ia,key_ai_api,ver_codigo,comentario_codigo,api_key_valid,id_microcontrolador) VALUES (?,?,?,?,?,?,?,?,?)',
+                     (None, None, None, None, None, 0, 0, 0, None))
       db.commit()
     else:
       print('Já tem uma configuração salva.')
@@ -180,7 +182,7 @@ def resetar_configs():
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('UPDATE configuracao SET nome_projeto = ?, apelido = ?, diretorio = ?, microcontrolador = ?, id_ia = ?, key_ai_api = ?, ver_codigo = ?, comentario_codigo = ?, api_key_valid = ?, id_microcontrolador = ? WHERE id = ?', (None, None, None, None, None, None, False, False, False, None, 1))
+    cursor.execute('UPDATE configuracao SET nome_projeto = ?, apelido = ?, diretorio = ?, id_microcontrolador = ?, id_ia = ?, key_ai_api = ?, ver_codigo = ?, comentario_codigo = ?, api_key_valid = ? WHERE id = ?', (None, None, None, None, None, None, False, False, False, 1))
     db.commit()
   except Exception as e:
     print(e)
@@ -190,15 +192,38 @@ def obter_configuracao():
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM configuracao JOIN ia ON configuracao.id_ia = ia.id')
+    cursor.execute('SELECT * FROM configuracao')
     dados = cursor.fetchone()
     db.close()
     
-    if len(dados) == 0:
+    if dados is None:
       raise Exception(f'Não há configurações salvas. Registre algo primeiro.')
     
     config = dict(dados)
-    print(config)
+    resultado_ia = obter_modelo_por_id(dados['id_ia']) if dados['id_ia'] is not None else None
+    resultado_mic = get_mic_by_id(dados['id_microcontrolador']) if dados['id_microcontrolador'] is not None else None
+
+    if resultado_ia is not None:
+      resultado_ia = dict(resultado_ia)
+      config.update(resultado_ia)
+    else:
+      config.update({
+        'modelo_disponivel': None,
+        'nome_ia': None
+      })
+      
+    if resultado_mic is not None:
+      resultado_mic = dict(resultado_mic)
+      config.update({
+        'fqbn': resultado_mic['fqbn'],
+        'nome_microcontrolador': resultado_mic['nome']
+      })
+    else:
+      config.update({
+        'fqbn': None,
+        'nome_microcontrolador': None
+      })
+      
     return config
   except Exception as e:
     raise Exception(f'error: {str(e)}')
@@ -267,11 +292,11 @@ def atualizar_dadosConf_gerais(nome_projeto, diretorio, ver_codigo, comentario_c
   finally:
     db.close()
 
-def atualizar_dados_mic(id_microcontrolador, microcontrolador):
+def atualizar_dados_mic(id_microcontrolador):
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('UPDATE configuracao SET id_microcontrolador = ?, microcontrolador = ? WHERE id = ?', (id_microcontrolador, microcontrolador, 1) )
+    cursor.execute('UPDATE configuracao SET id_microcontrolador = ? WHERE id = ?', (id_microcontrolador, 1) )
     db.commit()
     
     return 'Dados atualizados com sucesso!'
@@ -288,7 +313,7 @@ def atualizar_apelido(apelido):
     cursor.execute('SELECT * FROM configuracao')
     dados = cursor.fetchall()
     if (
-        dados[0]['microcontrolador'] in ['', None] or
+        dados[0]['id_microcontrolador'] in ['', None] or
         #dados[0]['api_key_valid'] in [0] or
         dados[0]['key_ai_api'] in ['', None] or
         dados[0]['diretorio'] in ['', None]
@@ -301,6 +326,55 @@ def atualizar_apelido(apelido):
     db.close()
     return 'Apelido salvo com sucesso!'
   except Exception as e:
-    print('erro aqui')
     print(str(e))
     raise Exception(f'Erro: {str(e)}')
+  
+
+# MICROCONTROLADOR
+def get_mic_by_nome(nome:str):
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM microcontrolador WHERE nome = ?", (nome,))
+    dados = cursor.fetchone()
+    cursor.close()
+
+    resultado = dict(dados)
+    if not resultado:
+      raise SistemaError(f"Houve um problema ao procurar o modelo de nome {nome}")
+    
+    return resultado
+  except Exception as e:
+    raise Exception(f"DEBUG - ERROR: {e}")
+
+def get_mic_by_id(id:int):
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM microcontrolador WHERE id = ?", (id,))
+    dados = cursor.fetchone()
+    cursor.close()
+
+    resultado = dict(dados)
+    if not resultado:
+      raise SistemaError(f"Houve um problema ao procurar o modelo de id {id}")
+    
+    return resultado
+  except Exception as e:
+    raise Exception(f"DEBUG - ERROR: {e}")
+
+def get_all_mic():
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM microcontrolador")
+    dados = cursor.fetchall()
+    cursor.close()
+
+    resultado = [dict(linha) for linha in dados]
+    if not resultado or len(resultado) == 0:
+      raise SistemaError("Houve um problema ao tentar obter todos os dados de modelos.")
+    
+    return resultado
+  except Exception as e:
+    raise Exception(f"DEBUG - ERROR: {e}")

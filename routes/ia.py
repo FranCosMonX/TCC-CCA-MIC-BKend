@@ -1,9 +1,53 @@
 from flask import Blueprint, jsonify, request
-from bd import add_modelo_ia, obter_modelo_por_nome_ia, obter_modelos_disponiveis, obter_modelo_por_id, obter_ias_disponiveis
+from bd import add_modelo_ia, obter_modelo_por_nome_ia, obter_modelos_disponiveis, obter_modelo_por_id, obter_ias_disponiveis, tem_modelo_da_ia, atualiza_chave_acesso_ai, edit_validacao_api_key
+from common.exceptions import UsuarioError
+from services.germini import atualiza_api_key_ou_modelo
 
 ia_bp = Blueprint("ia", __name__)
 
-@ia_bp.route('/adicionarModelo', methods=['POST'])
+@ia_bp.route('/ia/verificaConexao', methods=['POST'])
+def verifica_conexao():
+  """
+  Usado para verificar a conexão com a AI. É enviado uma requisição simples.
+  Returns:
+  
+    200: Conexão bem sucedida.
+    400: Campo ou alguma entrada de usuário incorreta.
+    500: Problemas com o backend.
+  """
+  ia = request.json.get('ia')
+  api = request.json.get('key_ai_api')
+  modelo = request.json.get('modelo')
+
+  if ia is None or modelo is None or ia == "" or modelo == "":
+    return jsonify({
+      'mensagem': "Faltam dados para verificar a conexão com o servidor da IA."
+    }), 400
+
+  id_modelo_ia = tem_modelo_da_ia(ia, modelo)
+  if id_modelo_ia is None:
+    return jsonify({
+      'mensagem': "A aplicação só suporta a ligação com alguns modelos no momoento."
+    }), 400
+
+  print(id_modelo_ia)
+  try:
+    atualiza_api_key_ou_modelo(api, modelo)
+    atualiza_chave_acesso_ai(id_modelo_ia, api)
+    edit_validacao_api_key(True)
+    return jsonify({
+      'mensagem': 'Conectado com sucesso'
+    }), 200
+  except UsuarioError as errU:
+    return jsonify({
+      'mensagem': errU.mensagem
+    }), 400
+  except Exception as e:
+    return jsonify({
+      'mensagem': 'Houve um problema em armazenar chave da API_KEY.'
+    }), 500
+
+@ia_bp.route('/ia/adicionarModelo', methods=['POST'])
 def adicionarModeloIA():
   nome_ia = request.json.get('nome_ia')
   modelo = request.json.get('modelo')
@@ -26,6 +70,11 @@ def adicionarModeloIA():
     return jsonify({
       "mensagem": "Modelo de IA salvo com sucesso."
     }), 200
+  except UsuarioError as e:
+    print(e)
+    return jsonify({
+      'mensagem': "Houve um problema em salvar os dados fornecidos. O nome do modelo é a provável causa."
+    }), 400
   except:
     return jsonify({
       'mensagem': "Houve algum problema em salvar os dados da IA."

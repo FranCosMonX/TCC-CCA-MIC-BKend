@@ -62,7 +62,7 @@ def criar_projeto(nome: str = None):
     print(f"Erro detalhado: {e}")
     raise UsuarioError("Impossível criar o projeto. Verifique os dados de configuração.")
 
-def gravar_codigo(codigo: str, nome_arquivo: str = None):
+def guardar_codigo(codigo: str, nome_arquivo: str = None):
   """
   Grava o código fonte no arquivo .ino do projeto.
   """
@@ -96,8 +96,63 @@ def gravar_codigo(codigo: str, nome_arquivo: str = None):
     print(f"Erro ao gravar arquivo: {e}")
     raise SistemaError("Falha crítica ao tentar gravar o código no sistema de arquivos.")
 
-def compilar():
-    """
-    Placeholder para futura implementação de compilação.
-    """
-    pass
+def compilar_projeto():
+  """
+  Compila o projeto Arduino utilizando o arduino-cli.
+  Retorna o log da compilação em caso de sucesso.
+  """
+  try:
+    configs = obter_configuracao()
+    diretorio_base = configs.get('diretorio')
+    nome_projeto = configs.get('nome_projeto')
+    fqbn = configs.get('id_microcontrolador') # Ex: arduino:esp32:esp32
+
+    # 1. Validações de ambiente
+    if not fqbn:
+      raise UsuarioError("Microcontrolador não configurado (FQBN ausente).")
+    
+    uri_executavel = Path(diretorio_base) / 'executavel'
+    project_path = uri_executavel / nome_projeto
+
+    if not project_path.exists():
+      raise SistemaError(f"Pasta do projeto não encontrada: {project_path}")
+
+    print(f"Iniciando compilação para {fqbn}...")
+
+    # 2. Construção do Comando
+    # arduino-cli compile --fqbn <placa> <caminho_do_projeto>
+    comando = [
+      ARDUINO_CLI_EXE,
+      "compile",
+      "--fqbn", fqbn,
+      str(project_path)
+    ]
+
+    # 3. Execução do subprocesso
+    resultado = subprocess.run(
+      comando,
+      capture_output=True,
+      text=True,
+      encoding='utf-8'
+    )
+
+    # 4. Tratamento de Retorno
+    if resultado.returncode != 0:
+      # Erro de compilação (erro de sintaxe no código C++, bibliotecas faltando, etc)
+      print("Erro de compilação detectado.")
+      # Retornamos o stderr para que o usuário saiba o que deu errado no código
+      raise SistemaError(f"Erro de Compilação:\n{resultado.stderr}")
+
+    print("Compilação concluída com sucesso!")
+    return {
+      "status": "sucesso",
+      "log": resultado.stdout,
+      "caminho_binario": str(project_path / "build")
+    }
+
+  except SistemaError as sys_err:
+    # Erros de lógica de compilação ou sistema
+    raise AmbienteError(str(sys_err))
+  except Exception as e:
+    print(f"Erro inesperado na compilação: {e}")
+    raise SistemaError(f"Falha interna ao tentar compilar: {e}")
