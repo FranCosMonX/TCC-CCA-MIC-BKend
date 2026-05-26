@@ -1,7 +1,18 @@
 from google import genai
 from google.genai import types
-from bd import obter_configuracao
-from common.exceptions import UsuarioError, SistemaError, JsonError, IAError, RequisicaoError
+from common.exceptions import (
+  UsuarioError,
+  SistemaError,
+  JsonError,
+  IAError,
+  RequisicaoError
+)
+from common.prompt import (
+  instrucao_modelo_chat,
+  gerar_instrucao_chat,
+  alterar_prompt_gerar_arquivo,
+  prompt_atual
+)
 import json
 import os
 
@@ -10,13 +21,23 @@ modelo_default = "gemini-2.5-flash"
 client = None
 chat = None  
 
-def verificar_conexao():
-  """Verifica a conexão com a API."""
+def verificar_conexao(contem_dados=False, chave = None, modelo = None):
+  """Verifica a conexão com a API. Caso não esteja configurada mesmo com dados salvos, será feita a reconfiguração para reconectar."""
+
+  if not client and contem_dados:
+    print("DEBUG - CONEXÃO COM IA PERDIDA, TENTANDO CONEXTAR NOVAMENTE.")
+    if chave is None or modelo is None:
+      return False
+    
+    atualiza_api_key_ou_modelo(chave, modelo)
+    return True
+
   try:
     if not client: return False
     for _ in client.models.list(config={'page_size': 1}):
       break
     print(f'DEBUG - CONEXÃO FEITA.')
+
     return True
   except Exception as e:
     print(f"DEBUG - ERROR gemini.py em verificar_conexao: {e}")
@@ -27,7 +48,6 @@ def atualiza_api_key_ou_modelo(chave: str, modelo=modelo_default):
   global client, chat, modelo_default
   modelo_default = modelo
 
-  print(f" {modelo} {chave}")
   try:
     client = genai.Client(api_key=chave)
     
@@ -44,20 +64,11 @@ def atualiza_api_key_ou_modelo(chave: str, modelo=modelo_default):
 
 def _gerar_config_sistema():
   """Auxiliar para montar a instrução de sistema baseada no BD."""
-  configuracao = obter_configuracao()
-  instrucao = f"""Você é uma assistente de sistemas embarcados para microcontroladores.
-  Regras:
-  - Apelido do usuário: {configuracao['apelido']}
-  - Microcontrolador: {configuracao['nome_microcontrolador']}
-  - Ver código: {configuracao['ver_codigo']}
-  - Comentários no código: {configuracao['comentario_codigo']}
-  - Nome do projeto: {configuracao['nome_projeto']}
-  - Linguagem de programação arduino (extensao .ino)
-  - Responda apenas sobre programação e microcontroladores.
-  - Use bibliotecas suportadas pelo arduino-cli.
-  """
+  
+  gerar_instrucao_chat()
+
   return types.GenerateContentConfig(
-    system_instruction=instrucao,
+    system_instruction=instrucao_modelo_chat,
     temperature=0.9
   )
 
@@ -83,7 +94,10 @@ def alterarPrompting(apenas_mudanca: str):
 
 def historico():
   """Retorna o objeto de histórico do chat."""
-  return chat.get_history() if chat else []
+  try:
+    return chat.get_history() if chat else []
+  except:
+    return []
 
 def salva_historico():
   """Salva o histórico formatado em um arquivo txt."""
@@ -102,12 +116,10 @@ def solicitar_codigo_em_json():
   Usa um segundo modelo (especialista em JSON) para processar 
   o histórico da conversa e gerar os arquivos do projeto.
   """
-  configuracao = obter_configuracao()
   
-  # 1. Transformamos o histórico em um bloco de texto descritivo
-  contexto_historico = ""
-  for msg in chat.get_history():
-    contexto_historico += f"{msg.role}: {msg.parts[0].text}\n"
+  # 1. Transformamos o histórico em um bloco de texto descritivo na criação de um prompt aceitavel
+  hist = historico()
+  prompt = alterar_prompt_gerar_arquivo(hist)
 
   # 2. Configuração estrita para JSON
   config_json = types.GenerateContentConfig(
@@ -116,38 +128,16 @@ def solicitar_codigo_em_json():
     system_instruction="Você é um gerador de arquivos JSON para sistemas embarcados. Retorne APENAS o JSON solicitado, sem explicações e NUNCA responda como MARKDOWN."
   )
 
-  prompt_final = f"""
-  Com base no histórico abaixo, gere os códigos necessários para o projeto.
-  
-  HISTÓRICO:
-  {contexto_historico}
-  
-  ESTRUTURA JSON OBRIGATÓRIA:
-  {{
-    "numero_de_arquivos": int,
-    "nome_projeto": "{configuracao['nome_projeto']}",
-    "bibliotecas": ["biblioteca1", "biblioteca2"],
-    "codigos": [
-      {{
-        "id": int,
-        "nome_arquivo": "main.ino",
-        "codigo": "string_do_codigo_aqui"
-      }}
-    ]
-  }}
-  Regras: Microcontrolador {configuracao['microcontrolador']}.
-  """
-  
   try:
     # Chamada direta (sem chat) para o modelo de arquivos
     # Usamos o mesmo modelo ou um diferente se preferir (ex: Pro)
     resposta = client.models.generate_content(
       model=modelo_default,
-      contents=prompt_final,
+      contents=prompt,
       config=config_json
     )
 
-    print(resposta.text)
+    # print(resposta.text)
     try:
       dados_json = json.loads(resposta.text)
       
@@ -166,4 +156,4 @@ def iniciar():
   """Inicia o processo de saudação e configuração inicial."""
   # O prompt de sistema já foi definido no 'atualiza_api_key_ou_modelo'
   # Aqui apenas enviamos o gatilho inicial se necessário.
-  return Enviar_Mensagem("Recebi as configurações. Por favor, confirme se está pronto.")
+  return Enviar_Mensagem(f"{prompt_atual}\nSISTEMA: Configurações definidas. Por favor, confirme se está pronto. O chat com o usuário irá iniciar.")

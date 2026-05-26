@@ -1,17 +1,13 @@
 from flask import Blueprint, request, jsonify
 from bd import (
-  atualizar_apelido,
-  atualiza_chave_acesso_ai,
   atualizar_dadosConf_gerais,
   atualizar_dados_mic,
   criar_config_default,
-  edit_validacao_api_key,
   init_db,
   obter_configuracao,
   get_mic_by_id,
-  get_all_mic,
   resetar_configs,
-  tem_modelo_da_ia
+  update_status_mic_config
 )
 from common.exceptions import (
   AmbienteError,
@@ -20,7 +16,8 @@ from common.exceptions import (
 from features.ambiente import (
   preparando_ambiente,
 )
-from services.germini import atualiza_api_key_ou_modelo, alterarPrompting, iniciar
+from services.germini import atualiza_api_key_ou_modelo
+from common.prompt import alterar_prompt_atual
 
 configuracao_bp = Blueprint("configuracao", __name__)
 
@@ -44,7 +41,7 @@ def inicializacao_de_dados():
       }), 200
     
     return jsonify({
-      'mensagem': 'Os arquivos já existem, mas falta pendências de dados.'}), 204
+      'mensagem': 'Os arquivos já existem, mas falta pendências de dados.'}), 200
   except:
     try:
       init_db()
@@ -165,7 +162,8 @@ def definir_conf_geral():
   print("passouu final")
   try:
     msg = atualizar_dadosConf_gerais(nome_projeto, diretorio,ver_codigo,comentario_codigo)
-    alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}, o nome do projeto é: {nome_projeto}")
+    # alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}, o nome do projeto é: {nome_projeto}")
+    alterar_prompt_atual(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}, o nome do projeto é: {nome_projeto}")
     return jsonify({
       'mensagem': msg,
       'dados':{
@@ -175,9 +173,9 @@ def definir_conf_geral():
         'comentario_codigo': comentario_codigo,
         'nome_projeto': nome_projeto
       }
-    }), 200
+    }), 201
   except Exception as e:
-    print(f"{e}")
+    # print(f"{e}")
     return jsonify({'error': str(e)}), 500
 
 @configuracao_bp.route('/configuracaoMicrocontrolador', methods=['POST'])
@@ -200,16 +198,18 @@ def definir_conf_mic():
     }), 400
   
   dados_mic = get_mic_by_id(id_mic)
-  print(dados_mic)
+  # print(dados_mic)
   try:
     atualizar_dados_mic(id_mic)
-    alterarPrompting(f"Microcontrolador: {dados_mic['nome']}, {dados_mic['fqbn']}")
+    alterar_prompt_atual(f"Microcontrolador: {dados_mic['nome']}, {dados_mic['fqbn']}")
+    # alterarPrompting(f"Microcontrolador: {dados_mic['nome']}, {dados_mic['fqbn']}")
   except Exception as e:
-    print(e)
+    # print(e)
     return jsonify({'mensagem': str(e)}), 500
   
   try:
     preparando_ambiente(dados_mic['fqbn'])
+    update_status_mic_config(dados_mic['id'], True)
     return jsonify({'mensagem': "Ambiente de trabalho configurado com êxito."}), 200
   except UsuarioError as uE:
     return jsonify({'mensage,': uE.mensagem}), 400

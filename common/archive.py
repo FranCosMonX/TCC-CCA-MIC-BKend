@@ -1,6 +1,6 @@
-from services.germini import obter_configuracao
+from bd import obter_configuracao
 from common.exceptions import SistemaError, UsuarioError
-import os, subprocess
+import os
 
 def criar_diretorios(nome:str):
   """

@@ -1,4 +1,4 @@
-from common.exceptions import SistemaError, AmbienteError
+from common.exceptions import SistemaError, AmbienteError, UsuarioError
 import subprocess, os
 from bd import obter_configuracao
 from common.archive import salvar_arquivo, criar_diretorios
@@ -19,6 +19,9 @@ def preparando_ambiente(id_microcontrolador:str=None):
     raise SistemaError("Parâmetro id_microcontrolador é nulo.")
   
   configuracao = obter_configuracao()
+  if configuracao['diretorio'] is ['', None]:
+    raise UsuarioError("É necessário definir parâmetros gerais antes de configurar o ambiente de execução.")
+
   URI_CONFIG = os.path.join(configuracao['diretorio'],'config')
   COMMAND = 'C:\\Program Files\\Arduino CLI\\arduino-cli.exe'
   BAT_TEXT_INICIAL = f"""@echo off
@@ -52,7 +55,7 @@ def preparando_ambiente(id_microcontrolador:str=None):
   if retorno.returncode != 0:
     raise AmbienteError("Erro ao executar Script para a instalação dos pacotes Arduino-CLI no terminal")
   
-  print("Terminou de preparar o ambiente e de configurar a placa")
+  print("DEBUG - Terminou de preparar o ambiente e de configurar a placa")
 
 def instalar_bibliotecas(bibliotecas: list):
   """
@@ -71,7 +74,7 @@ def instalar_bibliotecas(bibliotecas: list):
     def estaInstalado(text=str):
       return text.find("Installed") != -1 or text.find("installed") != -1
     RETORNO.append(estaInstalado(retorno.stdout))
-    print(retorno.stdout)
-    print(estaInstalado(retorno.stdout))
+    # print(retorno.stdout)
+    # print(estaInstalado(retorno.stdout))
   
   return RETORNO

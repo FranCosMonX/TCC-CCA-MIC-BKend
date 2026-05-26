@@ -22,11 +22,20 @@ CREATE TABLE IF NOT EXISTS ia (
 CREATE TABLE IF NOT EXISTS microcontrolador (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT UNIQUE,
-    fqbn TEXT
+    fqbn TEXT,
+    ambiente_configurado BOOLEAN NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entidade TEXT,
+    mensagem TEXT
 );
 
 INSERT OR IGNORE INTO ia(nome_ia, modelo_disponivel) VALUES ("Gemini", "gemini-2.5-flash");
 INSERT OR IGNORE INTO ia(nome_ia, modelo_disponivel) VALUES ("Gemini", "gemini-3.1-flash-lite-preview");
+INSERT OR IGNORE INTO ia(nome_ia, modelo_disponivel) VALUES ("Gemini", "gemini-3.1-flash-lite");
+INSERT OR IGNORE INTO ia(nome_ia, modelo_disponivel) VALUES ("Gemini", "gemini-3.5-flash");
 
-INSERT OR IGNORE INTO microcontrolador(nome, fqbn) VALUES ("ESP32S NodeMCU-32S", "esp32:esp32:nodemcu-32s");
-INSERT OR IGNORE INTO microcontrolador(nome, fqbn) VALUES ("Arduino UNO R3", "arduino:avr:uno");
+INSERT OR IGNORE INTO microcontrolador(nome, fqbn, ambiente_configurado) VALUES ("ESP32S NodeMCU-32S", "esp32:esp32:nodemcu-32s", 0);
+INSERT OR IGNORE INTO microcontrolador(nome, fqbn, ambiente_configurado) VALUES ("Arduino UNO R3", "arduino:avr:uno", 0);

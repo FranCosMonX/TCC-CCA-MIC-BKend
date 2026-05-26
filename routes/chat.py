@@ -3,21 +3,63 @@ import json
 from flask import Blueprint, jsonify, request
 from services.germini import (
   Enviar_Mensagem,
-  solicitar_codigo_em_json
+  iniciar,
+  verificar_conexao
 )
 from common.exceptions import (
-  JsonError
+  UsuarioError
 )
-from features.ambiente import (
-  instalar_bibliotecas
-)
-from features.projeto import (
-  criar_projeto,
-  guardar_codigo,
-  compilar_projeto
+from bd import (
+  obter_configuracao
 )
 
 chat_bp = Blueprint("chat", __name__)
+
+@chat_bp.route('/IniciarChat', methods=['POST'])
+def iniciar_char():
+  """
+  Descrição
+  
+    Usado para iniciar o chat, enviando todos os prompts para a IA. Caso tenha dados salvos, a conexão será feita, se ainda não estiver.
+    
+  Retorno:
+  
+    200: Iniciado com sucesso.
+    400: Campo ou alguma entrada de usuário incorreta.
+    500: Problemas com o backend.
+  """
+  try:
+    configuracao = obter_configuracao()
+    api_valid_bd = configuracao.get('api_key_valid')
+    ambiente_valid_bd = configuracao.get('ambiente_configurado')
+    nome_projeto_bd = configuracao.get('nome_projeto')
+
+    mensagem_error = ""
+    if nome_projeto_bd is None:
+      mensagem_error += "É necessário informar o nome do projeto para começar."
+    if not api_valid_bd:
+      mensagem_error += "É necessário definir as configurações de conexão com a API da IA."
+    if not ambiente_valid_bd:
+      mensagem_error += "É necessário estar com o ambiente de desenvolvimento configurado. Escolha o microcontrolador para que o código possa ser gerado corretamente."
+
+    if mensagem_error != "":
+      return jsonify({
+        'mensagem': "É necessário que corrija algumas pendências:\n" + mensagem_error
+      }), 400
+    
+    verificar_conexao(True, configuracao.get('key_ai_api'), configuracao.get('modelo_disponivel'))
+    iniciar()
+    return jsonify({
+      'mensagem': "Chat Iniciado"
+    }), 200
+  except UsuarioError as uE:
+    return jsonify({
+      'mensagem': str(uE)
+    }), 400
+  except Exception as e:
+    return jsonify({
+      'mensagem': str(e)
+    }), 500
 
 @chat_bp.route('/chat', methods=['POST'])
 def emviar_mensagem():
@@ -55,41 +97,3 @@ def emviar_mensagem():
       return jsonify({'error': str(e)}), 500
   except:
     return json({'mensagem' : 'Probkemas genericos'}), 500
-  
-@chat_bp.route('/gerar', methods=['POST'])
-def gerar_compilar():
-  try:
-    objeto_json = solicitar_codigo_em_json()
-    if objeto_json['bibliotecas'] is not None and len(objeto_json['bibliotecas']) > 0:
-      bibliotecas_instaladas: list = instalar_bibliotecas(objeto_json['bibliotecas'])
-      print(bibliotecas_instaladas)
-      
-      mensagem = "Problema ao instalar a(s) biblioteca(s):"
-      cont = 0 ; problema: bool = False
-      for biblioteca_status in bibliotecas_instaladas:
-        cont += 1
-        if not biblioteca_status:
-          problema = True
-          mensagem += f" {objeto_json["bibliotecas"][cont - 1]}"
-      
-      if problema:
-        jsonify ({
-          'mensagem': 'Não foi possivel instalar todas as bibliotecas para a execução do código.',
-          'resposta': mensagem
-        }), 202
-    
-    codigos = objeto_json['codigos']
-    for code_index in codigos:
-      criar_projeto()
-      guardar_codigo(code_index['codigo'],code_index['nome_arquivo'])
-
-    # 3. Compila o projeto
-    resultado_compilacao = compilar_projeto()
-    print(f"DEBUG - RESULTADO COMPILAÇÃO {resultado_compilacao}")
-    return jsonify({'mensagem': 'Projeto criado e compilado com sucesso.'}), 200
-  except JsonError as jE:
-    print(f"DEBUG - ERROR {jE}")
-    return jsonify({'mensagem': jE.mensagem}), 500
-  except Exception as e:
-    print(f"DEBUG - ERROR {e}")
-    return jsonify({f'mensagem: {e}'}), 500

@@ -216,12 +216,14 @@ def obter_configuracao():
       resultado_mic = dict(resultado_mic)
       config.update({
         'fqbn': resultado_mic['fqbn'],
-        'nome_microcontrolador': resultado_mic['nome']
+        'nome_microcontrolador': resultado_mic['nome'],
+        'ambiente_configurado': resultado_mic['ambiente_configurado']
       })
     else:
       config.update({
         'fqbn': None,
-        'nome_microcontrolador': None
+        'nome_microcontrolador': None,
+        'ambiente_configurado': None,
       })
       
     return config
@@ -310,27 +312,26 @@ def atualizar_apelido(apelido):
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM configuracao')
-    dados = cursor.fetchall()
-    if (
-        dados[0]['id_microcontrolador'] in ['', None] or
-        #dados[0]['api_key_valid'] in [0] or
-        dados[0]['key_ai_api'] in ['', None] or
-        dados[0]['diretorio'] in ['', None]
-      ):
-      raise Exception(f'Não poderá presseguir sem adicionar as seguintes informações necessárias: Microcontrolador, Chave da API (com validação) e diretório')
-    
-    
     cursor.execute('UPDATE configuracao SET apelido = ? WHERE id = ?', (apelido, 1) )
     db.commit()
     db.close()
-    return 'Apelido salvo com sucesso!'
+    return 'DEBUG - Apelido salvo com sucesso!'
   except Exception as e:
-    print(str(e))
-    raise Exception(f'Erro: {str(e)}')
+    raise Exception(f'DEBUG - Erro: {str(e)}')
   
 
 # MICROCONTROLADOR
+def update_status_mic_config(id:int, status: bool):
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("UPDATE microcontrolador SET ambiente_configurado = ? WHERE id = ?", (status, id))
+    db.commit()
+    cursor.close()
+  except Exception as e:
+    print("error aqui")
+    raise Exception(f"DEBUG - ERROR db.py em update_status_mic_config: {e}")
+
 def get_mic_by_nome(nome:str):
   try:
     db = get_db()
@@ -345,7 +346,7 @@ def get_mic_by_nome(nome:str):
     
     return resultado
   except Exception as e:
-    raise Exception(f"DEBUG - ERROR: {e}")
+    raise Exception(f"DEBUG - ERROR db.py em get_mic_by_nome: {e}")
 
 def get_mic_by_id(id:int):
   try:
@@ -378,3 +379,30 @@ def get_all_mic():
     return resultado
   except Exception as e:
     raise Exception(f"DEBUG - ERROR: {e}")
+
+# CHAT
+
+def criar_registro_chat(entidade: str, mensagem: str):
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO chat (entidade, mensagem) VALUES (?,?)", (entidade, mensagem))
+    db.commit()
+    cursor.close()
+
+  except Exception as e:
+    raise Exception(f"DEBUG - ERROR bd.py em criar_registro_chat: {e}")
+  
+def obter_registros_chat():
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM chat")
+    dados = cursor.fetchall()
+    cursor.close()
+
+    resultado = [dict(linha) for linha in dados]
+    
+    return resultado
+  except Exception as e:
+    raise Exception(f"DEBUG - ERROR bd.py em criar_registro_chat: {e}")

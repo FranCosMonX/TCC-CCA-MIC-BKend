@@ -1,9 +1,47 @@
 from flask import Blueprint, jsonify, request
-from bd import add_modelo_ia, obter_modelo_por_nome_ia, obter_modelos_disponiveis, obter_modelo_por_id, obter_ias_disponiveis, tem_modelo_da_ia, atualiza_chave_acesso_ai, edit_validacao_api_key
+from bd import add_modelo_ia, obter_modelo_por_nome_ia, obter_modelos_disponiveis, obter_modelo_por_id, obter_ias_disponiveis, tem_modelo_da_ia, atualiza_chave_acesso_ai, edit_validacao_api_key, obter_configuracao
 from common.exceptions import UsuarioError
-from services.germini import atualiza_api_key_ou_modelo
+from services.germini import atualiza_api_key_ou_modelo, verificar_conexao
 
 ia_bp = Blueprint("ia", __name__)
+
+@ia_bp.route('/ia/reconectar', methods=['POST'])
+def reconectar():
+  try:
+    configuracao = obter_configuracao()
+    modelo_bd = configuracao.get('modelo_disponivel')
+    api_key_bd = configuracao.get('key_ai_api')
+    nome_ia_bd = configuracao.get('nome_ia')
+
+    mensagem_error = ""
+    if modelo_bd is None:
+      mensagem_error += "Falta escolher um modelo de IA para ser utilizado."
+    if api_key_bd is None:
+      mensagem_error += "Falta informar a Chave de acesso para se conectar a API da IA."
+    if nome_ia_bd is None:
+      mensagem_error += "Não foi informado qual a IA será utilizada."
+
+    if mensagem_error != "":
+      resultado_v_conecxao = verifica_conexao()
+      if resultado_v_conecxao:
+        return jsonify({
+          'mensagem': mensagem_error
+        }), 400
+      else:
+        return jsonify({
+          'mensagem': "Não foi possivel obter uma resposta da API da IA."
+        }), 404
+
+    resposta = verificar_conexao(True,api_key_bd, modelo_bd)
+
+    if resposta:
+      return jsonify({'mensagem': 'conexão recuperada.'}), 200
+    else:
+      return jsonify({'mensagem': 'não foi possivel se conectar novamente, tente novamente mais tarde.'})
+  except Exception as e:
+    return jsonify({
+      'mensagem': e
+    })
 
 @ia_bp.route('/ia/verificaConexao', methods=['POST'])
 def verifica_conexao():

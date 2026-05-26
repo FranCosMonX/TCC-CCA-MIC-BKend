@@ -52,14 +52,13 @@ def criar_projeto(nome: str = None):
 
     if resultado.returncode != 0:
       raise SistemaError(f"Erro no arduino-cli: {resultado.stderr}")
-        
+    
     print(f"Projeto '{nome}' criado com sucesso em {project_path}")
 
+    return f"Projeto '{nome}' criado com sucesso em {project_path}\n"
   except SistemaError as sys_err:
     raise AmbienteError(str(sys_err))
   except Exception as e:
-    # Log de erro real para o desenvolvedor e erro genérico para a camada superior
-    print(f"Erro detalhado: {e}")
     raise UsuarioError("Impossível criar o projeto. Verifique os dados de configuração.")
 
 def guardar_codigo(codigo: str, nome_arquivo: str = None):
@@ -92,8 +91,8 @@ def guardar_codigo(codigo: str, nome_arquivo: str = None):
       arq.write(codigo)
     
     print(f"Código gravado com sucesso em: {nome_arquivo}")
+    return f"Código gravado com sucesso em: {nome_arquivo}\n"
   except Exception as e:
-    print(f"Erro ao gravar arquivo: {e}")
     raise SistemaError("Falha crítica ao tentar gravar o código no sistema de arquivos.")
 
 def compilar_projeto():
@@ -105,7 +104,7 @@ def compilar_projeto():
     configs = obter_configuracao()
     diretorio_base = configs.get('diretorio')
     nome_projeto = configs.get('nome_projeto')
-    fqbn = configs.get('id_microcontrolador') # Ex: arduino:esp32:esp32
+    fqbn = configs.get('fqbn') # Ex: arduino:esp32:esp32
 
     # 1. Validações de ambiente
     if not fqbn:
@@ -141,18 +140,62 @@ def compilar_projeto():
       # Erro de compilação (erro de sintaxe no código C++, bibliotecas faltando, etc)
       print("Erro de compilação detectado.")
       # Retornamos o stderr para que o usuário saiba o que deu errado no código
-      raise SistemaError(f"Erro de Compilação:\n{resultado.stderr}")
+      raise SistemaError(f"Erro de Compilação:\n\n{resultado.stderr}")
 
     print("Compilação concluída com sucesso!")
-    return {
-      "status": "sucesso",
-      "log": resultado.stdout,
-      "caminho_binario": str(project_path / "build")
-    }
-
+    return f"Compilação concluída com sucesso!\n\n{resultado.stdout}"
   except SistemaError as sys_err:
     # Erros de lógica de compilação ou sistema
-    raise AmbienteError(str(sys_err))
+    raise AmbienteError(str(sys_err.mensagem))
   except Exception as e:
-    print(f"Erro inesperado na compilação: {e}")
     raise SistemaError(f"Falha interna ao tentar compilar: {e}")
+  
+def gravar_projeto():
+  try:
+    configs = obter_configuracao()
+    diretorio_base = configs.get('diretorio')
+    nome_projeto = configs.get('nome_projeto')
+    fqbn = configs.get('fqbn')
+
+    process = subprocess.run(
+      [ARDUINO_CLI_EXE, 'board', 'list'],
+      capture_output=True,
+      text=True
+    )
+
+    if process.returncode != 0:
+      raise AmbienteError('Houve um problema na configuração do ambiente utilizada na descoberta da porta USB.')
+    dados_saida = process.stdout
+    
+    porta_USB = ""
+    linhas = dados_saida.split("\n")
+    for linha in linhas:
+      print(linha)
+      if "USB" in linha:
+        dados = " ".join(linha.split()).split(" ")
+        print(f"DEBUG - Usando {dados[0]} como porta para gravar o código")
+        porta_USB = dados[0]
+    
+    if porta_USB == "":
+      raise UsuarioError("Microcontrolador não está conectado, ou há multiplos aparelhos conextados nas portas USB.")
+
+    uri_executavel = Path(diretorio_base) / 'executavel'
+    project_path = uri_executavel / nome_projeto
+
+    process = subprocess.run(
+      [ARDUINO_CLI_EXE, 'upload', project_path, '-b', fqbn, '-p', porta_USB],
+      capture_output=True,
+      text=True
+    )
+
+    if process.returncode != 0:
+      raise AmbienteError('Houve um problema na configuração do ambiente utilizada na gravação do codigo no microcontrolador.')
+    dados_saida = process.stdout
+
+    return dados_saida
+  except AmbienteError as aE:
+    raise SistemaError(f"DEBUG - ERROR: Problema na configuração do ambiente. {aE.mensagem}")
+  except UsuarioError as uE:
+    raise UsuarioError(uE.mensagem)
+  except Exception as e:
+    raise SistemaError(f"DEBUG - ERROR projeto.py em gravar_projeto. {e}")

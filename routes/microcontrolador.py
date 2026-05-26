@@ -1,5 +1,22 @@
 from flask import Blueprint, jsonify, request
-from bd import get_all_mic
+from bd import get_all_mic, obter_configuracao
+from features.projeto import compilar_projeto, gravar_projeto
+from common.exceptions import (
+  UsuarioError,
+  SistemaError, 
+  AmbienteError,
+  JsonError
+)
+from services.germini import (
+  solicitar_codigo_em_json
+)
+from features.ambiente import (
+  instalar_bibliotecas
+)
+from features.projeto import (
+  criar_projeto,
+  guardar_codigo
+)
 
 microcontrolador_bp = Blueprint("microcontrolador", __name__)
 
@@ -23,4 +40,96 @@ def obter_microcontroladores():
     print(f"DEBUG - ERROR: {e}")
     return jsonify({
       'mensagem': e
+    }), 500
+  
+@microcontrolador_bp.route('/gerar', methods=['POST'])
+def gerar_compilar():
+  try:
+    objeto_json = solicitar_codigo_em_json()
+    if objeto_json['bibliotecas'] is not None and len(objeto_json['bibliotecas']) > 0:
+      bibliotecas_instaladas: list = instalar_bibliotecas(objeto_json['bibliotecas'])
+      print(bibliotecas_instaladas)
+      
+      mensagem = "Problema ao instalar a(s) biblioteca(s):"
+      cont = 0 ; problema: bool = False
+      for biblioteca_status in bibliotecas_instaladas:
+        cont += 1
+        if not biblioteca_status:
+          problema = True
+          mensagem += f" {objeto_json["bibliotecas"][cont - 1]}"
+      
+      if problema:
+        jsonify ({
+          'mensagem': 'Não foi possivel instalar todas as bibliotecas para a execução do código.',
+          'resposta': mensagem
+        }), 202
+    
+    codigos = objeto_json['codigos']
+    for code_index in codigos:
+      criar_projeto()
+      guardar_codigo(code_index['codigo'],code_index['nome_arquivo'])
+
+    # 3. Compila o projeto
+    # resultado_compilacao = compilar_projeto()
+    # print(f"DEBUG - RESULTADO COMPILAÇÃO {resultado_compilacao}")
+    return jsonify({'mensagem': 'Projeto criado com sucesso.'}), 200
+  except JsonError as jE:
+    print(f"DEBUG - ERROR {jE.mensagem}")
+    return jsonify({'mensagem': jE.mensagem}), 500
+  except Exception as e:
+    print(f"DEBUG - ERROR {e}")
+    return jsonify({f'mensagem: {e}'}), 500
+  
+@microcontrolador_bp.route('/compilar', methods=['POST'])
+def compilar_codigo():
+  try:
+    configuracao = obter_configuracao()
+    if configuracao['diretorio'] in ['', None]:
+      return jsonify({
+        'mensagem': 'É necessário que o projeto esteja criado no diretório especificado nas configurações gerais.'
+      }), 400
+    
+    resultaado = compilar_projeto()
+    return jsonify({
+      'mensagem': resultaado
+    }), 200
+  except UsuarioError as uE:
+    # print(uE)
+    return jsonify({
+      'mensagem': uE.mensagem
+    }),400
+  except SistemaError as sE:
+    # print(sE)
+    return jsonify({
+      'mensagem': sE.mensagem
+    }), 500
+  except Exception as e:
+    # print(e)
+    return jsonify({
+      'mensagem': str(e)
+    }), 500
+
+@microcontrolador_bp.route("/gravar", methods=['POST'])
+def gravar_codigo():
+  try:
+    resultado = gravar_projeto()
+
+    return jsonify({
+      'mensagem': resultado
+    }), 200
+  except UsuarioError as uE:
+    return jsonify({
+      'mensagem': uE.mensagem
+    }),400
+  except SistemaError as sE:
+    return jsonify({
+      'mensagem': sE.mensagem
+    }), 500
+  except AmbienteError as aE:
+    return jsonify({
+      'mensagem': f'Houve um problema na configuração do ambiente: {aE}'
+    }), 409
+  except Exception as e:
+    return jsonify({
+      'mensagem': str(e)
     }), 500
