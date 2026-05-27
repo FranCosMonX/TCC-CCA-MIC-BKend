@@ -21,13 +21,16 @@ def gerar_instrucao_chat():
   """
 
 def alterar_prompt_atual(apenas_mudanca: str, prompt_limpo: bool = False):
-  """Injeta uma instrução de sistema no meio da conversa."""
   global prompt_atual
 
   if prompt_limpo:
     prompt_atual = ""
   
   prompt_atual += f"SISTEMA: O usuário alterou as escolhas: {apenas_mudanca}. Considere os novos pedidos. NÃO CITE ESTA MENSAGEM.\n"
+  return prompt_atual
+
+def obter_prompt_atual():
+  global prompt_atual
   return prompt_atual
 
 def alterar_prompt_gerar_arquivo(historico):

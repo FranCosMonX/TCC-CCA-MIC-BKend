@@ -7,10 +7,11 @@ from services.germini import (
   verificar_conexao
 )
 from common.exceptions import (
-  UsuarioError
+  UsuarioError, IAError
 )
 from bd import (
-  obter_configuracao
+  obter_configuracao,
+  excluir_registro_chat
 )
 
 chat_bp = Blueprint("chat", __name__)
@@ -57,6 +58,7 @@ def iniciar_char():
       'mensagem': str(uE)
     }), 400
   except Exception as e:
+    print(e)
     return jsonify({
       'mensagem': str(e)
     }), 500
@@ -95,5 +97,15 @@ def emviar_mensagem():
       }), 200
     except Exception as e:
       return jsonify({'error': str(e)}), 500
-  except:
+  except IAError as iE:
+    return json({'mensagem': iE.mensagem}), 404
+  except Exception:
     return json({'mensagem' : 'Probkemas genericos'}), 500
+  
+@chat_bp.route('/chat/remover/tudo', methods=['DELETE'])
+def remover_tudo():
+  try:
+    excluir_registro_chat()
+    return jsonify({'mensagem': 'exclusão feita com sucesso.'})
+  except Exception as e:
+    return jsonify({'mensagem': str(e)}),500

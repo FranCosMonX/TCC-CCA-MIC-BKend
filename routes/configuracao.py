@@ -40,8 +40,7 @@ def inicializacao_de_dados():
         'mensagem': 'Já existe arquivo e dados salvos.'
       }), 200
     
-    return jsonify({
-      'mensagem': 'Os arquivos já existem, mas falta pendências de dados.'}), 200
+    return jsonify(), 204
   except:
     try:
       init_db()
@@ -81,7 +80,7 @@ def carregar_configuracao():
   mensagem = ""
   execucao = [configuracao['id_microcontrolador'] is not None, configuracao['key_ai_api'] is not None, configuracao['diretorio'] is not None]
   try:
-    preparando_ambiente(configuracao['id_microcontrolador'])
+    preparando_ambiente(configuracao['package_id_mic'])
     mensagem += "Ambiente de execução configurado com exito."
     execucao[0] = True
   except Exception as e:
@@ -202,13 +201,12 @@ def definir_conf_mic():
   try:
     atualizar_dados_mic(id_mic)
     alterar_prompt_atual(f"Microcontrolador: {dados_mic['nome']}, {dados_mic['fqbn']}")
-    # alterarPrompting(f"Microcontrolador: {dados_mic['nome']}, {dados_mic['fqbn']}")
   except Exception as e:
     # print(e)
     return jsonify({'mensagem': str(e)}), 500
   
   try:
-    preparando_ambiente(dados_mic['fqbn'])
+    preparando_ambiente(dados_mic['package_id'])
     update_status_mic_config(dados_mic['id'], True)
     return jsonify({'mensagem': "Ambiente de trabalho configurado com êxito."}), 200
   except UsuarioError as uE:

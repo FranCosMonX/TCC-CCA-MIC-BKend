@@ -5,17 +5,17 @@ from common.archive import salvar_arquivo, criar_diretorios
 
 ARDUINO_CLI_EXE = 'C:\\Program Files\\Arduino CLI\\arduino-cli.exe'
 
-def preparando_ambiente(id_microcontrolador:str=None):
+def preparando_ambiente(package_id:str=None):
   """
   Utilizado para instalar o arduino-cli e configurar a placa do microcontrolador usando o arduino-cli
   Params:
-    id_microcontrolador (str): Identificador do microcontrolador usado pelo arduino-cli
+    id_microcontrolador (str): Identificador do pacote do microcontrolador usado pelo arduino-cli (não o ID dele para compilar = FQBN)
   Exceptions:
     SistemaError: Erros do sistema  
     UsuarioError: URI informada pelo o usuário é inválida.
     AmbienteError: Houve um problema ao configurar o ambiente.
   """
-  if id_microcontrolador is None:
+  if package_id is None:
     raise SistemaError("Parâmetro id_microcontrolador é nulo.")
   
   configuracao = obter_configuracao()
@@ -42,7 +42,7 @@ def preparando_ambiente(id_microcontrolador:str=None):
   
   "{COMMAND}" core update-index
     
-  "{COMMAND}" core install {id_microcontrolador}
+  "{COMMAND}" core install {package_id}
   
   exit /b 0
   """

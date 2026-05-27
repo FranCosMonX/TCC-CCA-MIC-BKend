@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS microcontrolador (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT UNIQUE,
     fqbn TEXT,
+    package_id TEXT,
     ambiente_configurado BOOLEAN NOT NULL
 );
 
@@ -37,5 +38,5 @@ INSERT OR IGNORE INTO ia(nome_ia, modelo_disponivel) VALUES ("Gemini", "gemini-3
 INSERT OR IGNORE INTO ia(nome_ia, modelo_disponivel) VALUES ("Gemini", "gemini-3.1-flash-lite");
 INSERT OR IGNORE INTO ia(nome_ia, modelo_disponivel) VALUES ("Gemini", "gemini-3.5-flash");
 
-INSERT OR IGNORE INTO microcontrolador(nome, fqbn, ambiente_configurado) VALUES ("ESP32S NodeMCU-32S", "esp32:esp32:nodemcu-32s", 0);
-INSERT OR IGNORE INTO microcontrolador(nome, fqbn, ambiente_configurado) VALUES ("Arduino UNO R3", "arduino:avr:uno", 0);
+INSERT OR IGNORE INTO microcontrolador(nome, fqbn, package_id, ambiente_configurado) VALUES ("ESP32S NodeMCU-32S", "esp32:esp32:nodemcu-32s", "esp32:esp32", 0);
+INSERT OR IGNORE INTO microcontrolador(nome, fqbn, package_id, ambiente_configurado) VALUES ("Arduino UNO R3", "arduino:avr:uno", "arduino:avr", 0);

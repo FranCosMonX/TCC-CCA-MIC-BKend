@@ -17,6 +17,7 @@ from features.projeto import (
   criar_projeto,
   guardar_codigo
 )
+from features.registro import registrar_mensagem_chat
 
 microcontrolador_bp = Blueprint("microcontrolador", __name__)
 
@@ -44,6 +45,9 @@ def obter_microcontroladores():
   
 @microcontrolador_bp.route('/gerar', methods=['POST'])
 def gerar_compilar():
+  """
+  Tem o objetivo de instalar as bibliotecas utilizadas no código além da criação dos arquivos.
+  """
   try:
     objeto_json = solicitar_codigo_em_json()
     if objeto_json['bibliotecas'] is not None and len(objeto_json['bibliotecas']) > 0:
@@ -60,19 +64,16 @@ def gerar_compilar():
       
       if problema:
         jsonify ({
-          'mensagem': 'Não foi possivel instalar todas as bibliotecas para a execução do código.',
-          'resposta': mensagem
+          'mensagem': f'Não foi possivel instalar todas as bibliotecas para a execução do código. {mensagem}',
         }), 202
     
+    mensagem = ""
     codigos = objeto_json['codigos']
     for code_index in codigos:
       criar_projeto()
-      guardar_codigo(code_index['codigo'],code_index['nome_arquivo'])
+      mensagem += guardar_codigo(code_index['codigo'],code_index['nome_arquivo'])
 
-    # 3. Compila o projeto
-    # resultado_compilacao = compilar_projeto()
-    # print(f"DEBUG - RESULTADO COMPILAÇÃO {resultado_compilacao}")
-    return jsonify({'mensagem': 'Projeto criado com sucesso.'}), 200
+    return jsonify({'mensagem': mensagem}), 200
   except JsonError as jE:
     print(f"DEBUG - ERROR {jE.mensagem}")
     return jsonify({'mensagem': jE.mensagem}), 500
@@ -98,6 +99,11 @@ def compilar_codigo():
     return jsonify({
       'mensagem': uE.mensagem
     }),400
+  except AmbienteError as aE:
+    # print(uE)
+    return jsonify({
+      'mensagem': aE.mensagem
+    }),409
   except SistemaError as sE:
     # print(sE)
     return jsonify({
@@ -121,14 +127,14 @@ def gravar_codigo():
     return jsonify({
       'mensagem': uE.mensagem
     }),400
+  except AmbienteError as aE:
+    return jsonify({
+      'mensagem': aE.mensagem
+    }), 409
   except SistemaError as sE:
     return jsonify({
       'mensagem': sE.mensagem
     }), 500
-  except AmbienteError as aE:
-    return jsonify({
-      'mensagem': f'Houve um problema na configuração do ambiente: {aE}'
-    }), 409
   except Exception as e:
     return jsonify({
       'mensagem': str(e)

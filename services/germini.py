@@ -11,10 +11,12 @@ from common.prompt import (
   instrucao_modelo_chat,
   gerar_instrucao_chat,
   alterar_prompt_gerar_arquivo,
-  prompt_atual
+  obter_prompt_atual
 )
-import json
-import os
+from features.registro import (
+  registrar_mensagem_chat
+)
+import json, os, time
 
 modelo_default = "gemini-2.5-flash" 
 
@@ -74,14 +76,26 @@ def _gerar_config_sistema():
 
 def Enviar_Mensagem(mensagem: str):
   """Envia mensagem no chat principal (conversa humana)."""
+  registrar_mensagem_chat("usuario", mensagem)
+
+  tempo_espera = 30 * 1000
   try:
     if not chat:
       raise SistemaError("Chat não iniciado. Verifique a API Key.")
     response = chat.send_message(mensagem)
     return response
   except Exception as e:
-    print(f"Erro ao enviar: {e}")
-    raise IAError("Problemas ao enviar a requisição para a IA.")
+    if e.code == 503:
+      print(f"DEBUG - Erro ao enviar mensagem para a IA com código 503. Tentando reenviar após 30 segundos.")
+      time.sleep(tempo_espera)
+      try:
+        response = chat.send_message(mensagem)
+        return response
+      except Exception as e2:
+        raise IAError(f"Problema em reenviar a requisição para a IA.\n\n{e2.message}")
+
+    print(f"DEBUG - Erro ao enviar mensagem para a IA: {e}")
+    raise IAError(f"Problemas ao enviar a requisição para a IA.\n\n {e.message}")
 
 def alterarPrompting(apenas_mudanca: str):
   """Injeta uma instrução de sistema no meio da conversa."""
@@ -156,4 +170,8 @@ def iniciar():
   """Inicia o processo de saudação e configuração inicial."""
   # O prompt de sistema já foi definido no 'atualiza_api_key_ou_modelo'
   # Aqui apenas enviamos o gatilho inicial se necessário.
-  return Enviar_Mensagem(f"{prompt_atual}\nSISTEMA: Configurações definidas. Por favor, confirme se está pronto. O chat com o usuário irá iniciar.")
+  print(f"prompt atual: {obter_prompt_atual()}")
+
+  mensagem = f"{obter_prompt_atual()}SISTEMA: Configurações definidas. Por favor, confirme se está pronto. O chat com o usuário irá iniciar."
+  registrar_mensagem_chat("sistema", mensagem)
+  return Enviar_Mensagem(mensagem)

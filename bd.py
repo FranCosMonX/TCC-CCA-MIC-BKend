@@ -217,7 +217,8 @@ def obter_configuracao():
       config.update({
         'fqbn': resultado_mic['fqbn'],
         'nome_microcontrolador': resultado_mic['nome'],
-        'ambiente_configurado': resultado_mic['ambiente_configurado']
+        'ambiente_configurado': resultado_mic['ambiente_configurado'],
+        'package_id_mic': resultado_mic['package_id']
       })
     else:
       config.update({
@@ -404,5 +405,16 @@ def obter_registros_chat():
     resultado = [dict(linha) for linha in dados]
     
     return resultado
+  except Exception as e:
+    raise Exception(f"DEBUG - ERROR bd.py em criar_registro_chat: {e}")
+  
+def excluir_registro_chat():
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM chat")
+    db.commit()
+    cursor.close()
+    
   except Exception as e:
     raise Exception(f"DEBUG - ERROR bd.py em criar_registro_chat: {e}")

@@ -53,9 +53,8 @@ def criar_projeto(nome: str = None):
     if resultado.returncode != 0:
       raise SistemaError(f"Erro no arduino-cli: {resultado.stderr}")
     
-    print(f"Projeto '{nome}' criado com sucesso em {project_path}")
-
-    return f"Projeto '{nome}' criado com sucesso em {project_path}\n"
+    resposta = f"Projeto '{nome}' criado com sucesso em {project_path}.\n"
+    return resposta
   except SistemaError as sys_err:
     raise AmbienteError(str(sys_err))
   except Exception as e:
@@ -90,10 +89,10 @@ def guardar_codigo(codigo: str, nome_arquivo: str = None):
     with open(arquivo_final, mode='w', encoding='utf-8') as arq:
       arq.write(codigo)
     
-    print(f"Código gravado com sucesso em: {nome_arquivo}")
-    return f"Código gravado com sucesso em: {nome_arquivo}\n"
+    resposta = f"Código do projeto {nome_projeto} gravado com sucesso em: {nome_arquivo}.\n"
+    return resposta
   except Exception as e:
-    raise SistemaError("Falha crítica ao tentar gravar o código no sistema de arquivos.")
+    raise SistemaError(f"Falha crítica ao tentar gravar o código no sistema de arquivos. {e}")
 
 def compilar_projeto():
   """
@@ -138,17 +137,17 @@ def compilar_projeto():
     # 4. Tratamento de Retorno
     if resultado.returncode != 0:
       # Erro de compilação (erro de sintaxe no código C++, bibliotecas faltando, etc)
-      print("Erro de compilação detectado.")
+      print("DEBUG - Erro de compilação detectado.")
       # Retornamos o stderr para que o usuário saiba o que deu errado no código
-      raise SistemaError(f"Erro de Compilação:\n\n{resultado.stderr}")
+      raise AmbienteError(f"Erro de Compilação o projeto {nome_projeto}:\n\n{resultado.stderr}")
 
-    print("Compilação concluída com sucesso!")
-    return f"Compilação concluída com sucesso!\n\n{resultado.stdout}"
+    print("DEBUG - Compilação concluída com sucesso!")
+    return f"Projeto {nome_projeto} compilado com sucesso!\n\n{resultado.stdout}"
   except SistemaError as sys_err:
     # Erros de lógica de compilação ou sistema
     raise AmbienteError(str(sys_err.mensagem))
   except Exception as e:
-    raise SistemaError(f"Falha interna ao tentar compilar: {e}")
+    raise SistemaError(f"Falha interna ao tentar compilar o projeto {nome_projeto}: {e}")
   
 def gravar_projeto():
   try:
@@ -188,9 +187,9 @@ def gravar_projeto():
       text=True
     )
 
-    if process.returncode != 0:
-      raise AmbienteError('Houve um problema na configuração do ambiente utilizada na gravação do codigo no microcontrolador.')
     dados_saida = process.stdout
+    if process.returncode != 0:
+      raise AmbienteError(f'Houve um problema na configuração do ambiente utilizada na gravação do codigo no microcontrolador.\n\n{dados_saida}')
 
     return dados_saida
   except AmbienteError as aE:
