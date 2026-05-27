@@ -2,8 +2,10 @@ from common.exceptions import SistemaError, AmbienteError, UsuarioError
 import subprocess, os
 from bd import obter_configuracao
 from common.archive import salvar_arquivo, criar_diretorios
+from pathlib import Path
 
 ARDUINO_CLI_EXE = 'C:\\Program Files\\Arduino CLI\\arduino-cli.exe'
+LOC_PATH = os.getcwd()
 
 def preparando_ambiente(package_id:str=None):
   """
@@ -21,9 +23,20 @@ def preparando_ambiente(package_id:str=None):
   configuracao = obter_configuracao()
   if configuracao['diretorio'] is ['', None]:
     raise UsuarioError("É necessário definir parâmetros gerais antes de configurar o ambiente de execução.")
-
+  
   URI_CONFIG = os.path.join(configuracao['diretorio'],'config')
   COMMAND = 'C:\\Program Files\\Arduino CLI\\arduino-cli.exe'
+  comando_atualizar_index = ""
+  if package_id == "esp32:esp32":
+    local_arquivo = Path(os.getcwd()) / 'source' / 'package' / 'package_esp32_index.json'
+    comando_atualizar_index = f"\"{COMMAND}\" core update-index --additional-urls file:///{local_arquivo}"
+  else:
+    comando_atualizar_index = f"""
+    "{COMMAND}" core update-index
+    
+    "{COMMAND}" core install {package_id}
+    """
+  
   BAT_TEXT_INICIAL = f"""@echo off
   
   "{COMMAND}"
@@ -40,9 +53,7 @@ def preparando_ambiente(package_id:str=None):
 
   :fim
   
-  "{COMMAND}" core update-index
-    
-  "{COMMAND}" core install {package_id}
+  {comando_atualizar_index}
   
   exit /b 0
   """
