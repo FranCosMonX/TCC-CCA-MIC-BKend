@@ -73,6 +73,7 @@ def gerar_compilar():
       criar_projeto()
       mensagem += guardar_codigo(code_index['codigo'],code_index['nome_arquivo'])
 
+    registrar_mensagem_chat('sistema', mensagem)
     return jsonify({'mensagem': mensagem}), 200
   except JsonError as jE:
     print(f"DEBUG - ERROR {jE.mensagem}")

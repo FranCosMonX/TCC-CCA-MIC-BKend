@@ -76,7 +76,6 @@ def _gerar_config_sistema():
 
 def Enviar_Mensagem(mensagem: str):
   """Envia mensagem no chat principal (conversa humana)."""
-  registrar_mensagem_chat("usuario", mensagem)
 
   tempo_espera = 30 * 1000
   try:
@@ -92,7 +91,11 @@ def Enviar_Mensagem(mensagem: str):
         response = chat.send_message(mensagem)
         return response
       except Exception as e2:
+        if e2.code == 429:
+          raise IAError(f"Houve um problema ao enviar a requisição para a IA devido ao limite de solicitações atingido..")
         raise IAError(f"Problema em reenviar a requisição para a IA.\n\n{e2.message}")
+    elif e.code == 429:
+      raise IAError(f"Houve um problema ao enviar a requisição para a IA devido ao limite de solicitações atingido..")
 
     print(f"DEBUG - Erro ao enviar mensagem para a IA: {e}")
     raise IAError(f"Problemas ao enviar a requisição para a IA.\n\n {e.message}")

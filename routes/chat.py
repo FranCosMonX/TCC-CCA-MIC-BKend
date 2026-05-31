@@ -9,9 +9,13 @@ from services.germini import (
 from common.exceptions import (
   UsuarioError, IAError
 )
+from features.registro import (
+  registrar_mensagem_chat
+)
 from bd import (
   obter_configuracao,
-  excluir_registro_chat
+  excluir_registro_chat_de_conversa,
+  obter_registros_chat
 )
 
 chat_bp = Blueprint("chat", __name__)
@@ -57,6 +61,10 @@ def iniciar_char():
     return jsonify({
       'mensagem': str(uE)
     }), 400
+  except IAError as iE:
+    return jsonify({
+      'mensagem': str(uE)
+    }), 429
   except Exception as e:
     print(e)
     return jsonify({
@@ -84,8 +92,9 @@ def emviar_mensagem():
     }), 400
   
   try:
-    
+    registrar_mensagem_chat("usuario", mensagem)
     resposta = Enviar_Mensagem(mensagem).text
+    registrar_mensagem_chat("ia", resposta)
     try:
       return jsonify({
         'mensagem': resposta
@@ -98,14 +107,24 @@ def emviar_mensagem():
     except Exception as e:
       return jsonify({'error': str(e)}), 500
   except IAError as iE:
-    return json({'mensagem': iE.mensagem}), 404
+    return json({'mensagem': iE.mensagem}), 400
   except Exception:
     return json({'mensagem' : 'Probkemas genericos'}), 500
-  
+
+@chat_bp.route('/chat/historico', methods=['GET'])
+def obter_historico():
+  try:
+    resultado = obter_registros_chat()
+    return jsonify({
+      'registro': resultado
+    }), 200
+  except Exception as e:
+    return jsonify({'mensagem': f'ERROR: Houve um problema interno - {e}'}), 500
+
 @chat_bp.route('/chat/remover/tudo', methods=['DELETE'])
 def remover_tudo():
   try:
-    excluir_registro_chat()
+    excluir_registro_chat_de_conversa()
     return jsonify({'mensagem': 'exclusão feita com sucesso.'})
   except Exception as e:
     return jsonify({'mensagem': str(e)}),500

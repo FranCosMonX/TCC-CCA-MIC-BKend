@@ -1,14 +1,12 @@
 {
   "numero_de_arquivos": 1,
-  "nome_projeto": "SemaforoFlash",
-  "bibliotecas": [
-    "DHT.h"
-  ],
+  "nome_projeto": "display7segmentos",
+  "bibliotecas": [],
   "codigos": [
     {
       "id": 1,
-      "nome_arquivo": "SemaforoFlash.ino",
-      "codigo": "#include \"DHT.h\"\n\n#define DHTPIN 5\n#define DHTTYPE DHT11\nDHT dht(DHTPIN, DHTTYPE);\n\nconst int segmentos[] = {7, 6, 4, 2, 8, 9, 10};\n\nbyte digitos[10] = {\n  0b00111111, 0b00000110, 0b01011011, 0b01001111, 0b01100110, \n  0b01101101, 0b01111101, 0b00000111, 0b01111111, 0b01101111\n};\n\nvoid setup() {\n  for (int i = 0; i < 7; i++) pinMode(segmentos[i], OUTPUT);\n  pinMode(13, OUTPUT);\n  digitalWrite(13, LOW);\n  dht.begin();\n}\n\nvoid loop() {\n  digitalWrite(13, LOW);\n\n  float temp = dht.readTemperature();\n  \n  if (!isnan(temp)) {\n    int valorInteiro = (int)temp;\n    int dezena = (valorInteiro / 10) % 10;\n    int unidade = valorInteiro % 10;\n\n    mostrarNumero(dezena);\n    delay(1000);\n    \n    apagarDisplay();\n    delay(200);\n\n    mostrarNumero(unidade);\n    delay(1000);\n    \n    apagarDisplay();\n    delay(200);\n  }\n}\n\nvoid mostrarNumero(int num) {\n  byte padrao = digitos[num];\n  for (int i = 0; i < 7; i++) {\n    digitalWrite(segmentos[i], bitRead(padrao, i));\n  }\n}\n\nvoid apagarDisplay() {\n  for (int i = 0; i < 7; i++) digitalWrite(segmentos[i], LOW);\n}"
+      "nome_arquivo": "display7segmentos.ino",
+      "codigo": "/*\n * Projeto: display7segmentos\n * Autor: FrancosMonx\n * Microcontrolador: Arduino UNO R3\n * Descrição: Contador hexadecimal (0-F) em display de 7 segmentos.\n */\n\n// Definição dos pinos conforme solicitado\nconst int pinoA = 7;\nconst int pinoB = 6;\nconst int pinoC = 4;\nconst int pinoD = 2;\nconst int pinoE = 8;\nconst int pinoF = 9;\nconst int pinoG = 10;\n\n// Array com a configuração dos pinos para cada número/letra hexadecimal\n// A ordem no array interno é: {A, B, C, D, E, F, G}\n// 1 = ligado (segmento aceso), 0 = desligado\nint digitos[16][7] = {\n  {1, 1, 1, 1, 1, 1, 0}, // 0\n  {0, 1, 1, 0, 0, 0, 0}, // 1\n  {1, 1, 0, 1, 1, 0, 1}, // 2\n  {1, 1, 1, 1, 0, 0, 1}, // 3\n  {0, 1, 1, 0, 0, 1, 1}, // 4\n  {1, 0, 1, 1, 0, 1, 1}, // 5\n  {1, 0, 1, 1, 1, 1, 1}, // 6\n  {1, 1, 1, 0, 0, 0, 0}, // 7\n  {1, 1, 1, 1, 1, 1, 1}, // 8\n  {1, 1, 1, 1, 0, 1, 1}, // 9\n  {1, 1, 1, 0, 1, 1, 1}, // A\n  {0, 0, 1, 1, 1, 1, 1}, // b\n  {1, 0, 0, 1, 1, 1, 0}, // C\n  {0, 1, 1, 1, 1, 0, 1}, // d\n  {1, 0, 0, 1, 1, 1, 1}, // E\n  {1, 0, 0, 0, 1, 1, 1}  // F\n};\n\nvoid setup() {\n  // Configura todos os pinos como saída\n  pinMode(pinoA, OUTPUT);\n  pinMode(pinoB, OUTPUT);\n  pinMode(pinoC, OUTPUT);\n  pinMode(pinoD, OUTPUT);\n  pinMode(pinoE, OUTPUT);\n  pinMode(pinoF, OUTPUT);\n  pinMode(pinoG, OUTPUT);\n}\n\nvoid loop() {\n  // Loop para percorrer de 0 a F (16 estados)\n  for (int i = 0; i < 16; i++) {\n    exibirDigito(i);\n    delay(1000); // Espera 1 segundo entre cada contagem\n  }\n}\n\n// Função para ativar os pinos de acordo com o padrão do array\nvoid exibirDigito(int num) {\n  digitalWrite(pinoA, digitos[num][0]);\n  digitalWrite(pinoB, digitos[num][1]);\n  digitalWrite(pinoC, digitos[num][2]);\n  digitalWrite(pinoD, digitos[num][3]);\n  digitalWrite(pinoE, digitos[num][4]);\n  digitalWrite(pinoF, digitos[num][5]);\n  digitalWrite(pinoG, digitos[num][6]);\n}"
     }
   ]
 }

@@ -7,7 +7,9 @@ from bd import (
   obter_configuracao,
   get_mic_by_id,
   resetar_configs,
-  update_status_mic_config
+  update_status_mic_config,
+  excluir_registro_chat,
+  obter_registros_chat
 )
 from common.exceptions import (
   AmbienteError,
@@ -63,6 +65,7 @@ def remover_configuracao():
   
   try:
     resetar_configs()
+    excluir_registro_chat()
     return jsonify({
       'mensagem': 'Dados resetados com sucesso.'
     }), 200
@@ -98,6 +101,8 @@ def carregar_configuracao():
   else:
     execucao[2] = True
   
+  registros = obter_registros_chat()
+  alterar_prompt_atual(f"SISTEMA: Considere as mensagens salvas contidas em {registros}.\nNão mencione isso ao usuário", True)
   if execucao[0] or execucao[1] or execucao[2]:
     return jsonify({
       'mensagem': mensagem
@@ -195,6 +200,10 @@ def definir_conf_mic():
     return jsonify({
       'mensagem': 'É necessário escolher o microcontrolador para continuar.'
     }), 400
+  
+  configuracao = obter_configuracao()
+  if configuracao.get('diretorio') == None:
+    return jsonify({'mensagem': 'Primeiro conclua as configurações gerais. A URI selecionada é importante e usada na etapa de configuração do ambiente de desenvolvimento do microcontrolador.'}), 400
   
   dados_mic = get_mic_by_id(id_mic)
   # print(dados_mic)

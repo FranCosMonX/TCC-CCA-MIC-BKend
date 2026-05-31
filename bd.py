@@ -408,6 +408,17 @@ def obter_registros_chat():
   except Exception as e:
     raise Exception(f"DEBUG - ERROR bd.py em criar_registro_chat: {e}")
   
+def excluir_registro_chat_de_conversa():
+  try:
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM chat WHERE entidade = ? OR entidade = ?", ('usuario', 'ia'))
+    db.commit()
+    cursor.close()
+    
+  except Exception as e:
+    raise Exception(f"DEBUG - ERROR bd.py em excluir_registro_chat_de_conversa: {e}")
+  
 def excluir_registro_chat():
   try:
     db = get_db()

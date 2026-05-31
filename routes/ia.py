@@ -1,5 +1,16 @@
 from flask import Blueprint, jsonify, request
-from bd import add_modelo_ia, obter_modelo_por_nome_ia, obter_modelos_disponiveis, obter_modelo_por_id, obter_ias_disponiveis, tem_modelo_da_ia, atualiza_chave_acesso_ai, edit_validacao_api_key, obter_configuracao
+from bd import (
+  add_modelo_ia,
+  obter_modelo_por_nome_ia,
+  obter_modelos_disponiveis,
+  obter_modelo_por_id,
+  obter_ias_disponiveis,
+  tem_modelo_da_ia,
+  atualiza_chave_acesso_ai,
+  edit_validacao_api_key,
+  obter_configuracao,
+  obter_registros_chat
+)
 from common.exceptions import UsuarioError
 from services.germini import atualiza_api_key_ou_modelo, verificar_conexao
 
