@@ -6,6 +6,12 @@ from services.germini import (
   iniciar,
   verificar_conexao
 )
+from services.chatgpt import (
+  enviar_mensagem,
+  iniciar_chat as iniciar_chat_com_gpt,
+  testar_conexao
+)
+from enums.ia import IAName
 from common.exceptions import (
   UsuarioError, IAError
 )
@@ -21,7 +27,7 @@ from bd import (
 chat_bp = Blueprint("chat", __name__)
 
 @chat_bp.route('/IniciarChat', methods=['POST'])
-def iniciar_char():
+def iniciar_chat_route():
   """
   Descrição
   
@@ -38,6 +44,7 @@ def iniciar_char():
     api_valid_bd = configuracao.get('api_key_valid')
     ambiente_valid_bd = configuracao.get('ambiente_configurado')
     nome_projeto_bd = configuracao.get('nome_projeto')
+    nome_ia_bd = configuracao.get('nome_ia')
 
     mensagem_error = ""
     if nome_projeto_bd is None:
@@ -52,8 +59,14 @@ def iniciar_char():
         'mensagem': "É necessário que corrija algumas pendências:\n" + mensagem_error
       }), 400
     
-    verificar_conexao(True, configuracao.get('key_ai_api'), configuracao.get('modelo_disponivel'))
-    iniciar()
+    if nome_ia_bd == IAName.GEMINI:
+      verificar_conexao(True, configuracao.get('key_ai_api'), configuracao.get('modelo_disponivel'))
+      iniciar()
+    elif nome_ia_bd == IAName.CHATGPT:
+      testar_conexao()
+      iniciar_chat_com_gpt()
+    else:
+      return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
     return jsonify({
       'mensagem': "Chat Iniciado"
     }), 200
@@ -91,9 +104,18 @@ def emviar_mensagem():
       'error': 'É necessário acrescentar alguma informação no chat.'
     }), 400
   
+  nome_ia_bd = obter_configuracao()['nome_ia']
+
   try:
     registrar_mensagem_chat("usuario", mensagem)
-    resposta = Enviar_Mensagem(mensagem).text
+    resposta = None
+    if nome_ia_bd == IAName.GEMINI:
+      resposta = Enviar_Mensagem(mensagem).text
+    elif nome_ia_bd == IAName.CHATGPT:
+      resposta = enviar_mensagem(mensagem)
+    else:
+      return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
+    
     registrar_mensagem_chat("ia", resposta)
     try:
       return jsonify({
@@ -108,6 +130,10 @@ def emviar_mensagem():
       return jsonify({'error': str(e)}), 500
   except IAError as iE:
     return json({'mensagem': iE.mensagem}), 400
+  except UsuarioError as uE:
+    return jsonify({
+      'mensagem': str(uE)
+    }), 400
   except Exception:
     return json({'mensagem' : 'Probkemas genericos'}), 500
 

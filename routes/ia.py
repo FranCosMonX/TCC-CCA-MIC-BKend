@@ -11,8 +11,10 @@ from bd import (
   obter_configuracao,
   obter_registros_chat
 )
-from common.exceptions import UsuarioError
+from common.exceptions import UsuarioError, IAError, SistemaError
 from services.germini import atualiza_api_key_ou_modelo, verificar_conexao
+from services.chatgpt import alterar_api_key, alterar_modelo, testar_conexao, conexao_ok as conexao_gpt_ok
+from enums.ia import IAName
 
 ia_bp = Blueprint("ia", __name__)
 
@@ -32,23 +34,34 @@ def reconectar():
     if nome_ia_bd is None:
       mensagem_error += "Não foi informado qual a IA será utilizada."
 
-    if mensagem_error != "":
-      resultado_v_conecxao = verifica_conexao()
-      if resultado_v_conecxao:
-        return jsonify({
-          'mensagem': mensagem_error
-        }), 400
-      else:
-        return jsonify({
-          'mensagem': "Não foi possivel obter uma resposta da API da IA."
-        }), 404
-
-    resposta = verificar_conexao(True,api_key_bd, modelo_bd)
-
+    if nome_ia_bd == IAName.GEMINI:
+      resposta = verificar_conexao(True,api_key_bd, modelo_bd)
+    elif nome_ia_bd == IAName.CHATGPT:
+      print(f"conexao: {conexao_gpt_ok}")
+      if not conexao_gpt_ok:
+        alterar_api_key(api_key_bd)
+        alterar_modelo(modelo_bd)
+      resposta = testar_conexao()
+    else:
+      return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
+    
     if resposta:
       return jsonify({'mensagem': 'conexão recuperada.'}), 200
     else:
       return jsonify({'mensagem': 'não foi possivel se conectar novamente, tente novamente mais tarde.'})
+  except UsuarioError as errU:
+    return jsonify({
+      'mensagem': errU.mensagem
+    }), 400
+  except IAError as iE:
+    return jsonify({
+      'mensagem': f'Houve um problema inesperado com relaçãõ aos serviços de IA. {iE}'
+    }), 500
+  except SistemaError as sE:
+    # print(sE)
+    return jsonify({
+      'mensagem': sE.mensagem
+    }), 500
   except Exception as e:
     return jsonify({
       'mensagem': e
@@ -62,6 +75,7 @@ def verifica_conexao():
   
     200: Conexão bem sucedida.
     400: Campo ou alguma entrada de usuário incorreta.
+    404: Recurso não existe.
     500: Problemas com o backend.
   """
   ia = request.json.get('ia')
@@ -79,9 +93,16 @@ def verifica_conexao():
       'mensagem': "A aplicação só suporta a ligação com alguns modelos no momoento."
     }), 400
 
-  print(id_modelo_ia)
   try:
-    atualiza_api_key_ou_modelo(api, modelo)
+    if ia == IAName.GEMINI:
+      atualiza_api_key_ou_modelo(api, modelo)
+    elif ia == IAName.CHATGPT:
+      alterar_api_key(api)
+      alterar_modelo(modelo)
+      testar_conexao()
+    else:
+      return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
+    
     atualiza_chave_acesso_ai(id_modelo_ia, api)
     edit_validacao_api_key(True)
     return jsonify({
@@ -91,43 +112,47 @@ def verifica_conexao():
     return jsonify({
       'mensagem': errU.mensagem
     }), 400
+  except IAError as iE:
+    return jsonify({
+      'mensagem': f'Houve um problema inesperado com relaçãõ aos serviços de IA. {iE}'
+    }), 500
   except Exception as e:
     return jsonify({
-      'mensagem': 'Houve um problema em armazenar chave da API_KEY.'
+      'mensagem': f'Houve um problema em armazenar chave da API_KEY. {e}'
     }), 500
 
-@ia_bp.route('/ia/adicionarModelo', methods=['POST'])
-def adicionarModeloIA():
-  nome_ia = request.json.get('nome_ia')
-  modelo = request.json.get('modelo')
+# @ia_bp.route('/ia/adicionarModelo', methods=['POST'])
+# def adicionarModeloIA():
+#   nome_ia = request.json.get('nome_ia')
+#   modelo = request.json.get('modelo')
 
-  campos_faltantes = []
-  if nome_ia is None or nome_ia == "":
-    campos_faltantes.append("nome_ia")
+#   campos_faltantes = []
+#   if nome_ia is None or nome_ia == "":
+#     campos_faltantes.append("nome_ia")
 
-  if modelo is None or modelo =="":
-    campos_faltantes.append("modelo")
+#   if modelo is None or modelo =="":
+#     campos_faltantes.append("modelo")
 
-  if len(campos_faltantes) > 0:
-    return jsonify({
-      "mensagem": "Solicitação incompleta devido a falta de informações.",
-      "campos": campos_faltantes
-    }), 404
+#   if len(campos_faltantes) > 0:
+#     return jsonify({
+#       "mensagem": "Solicitação incompleta devido a falta de informações.",
+#       "campos": campos_faltantes
+#     }), 404
   
-  try:
-    add_modelo_ia(nome_ia, modelo)
-    return jsonify({
-      "mensagem": "Modelo de IA salvo com sucesso."
-    }), 200
-  except UsuarioError as e:
-    print(e)
-    return jsonify({
-      'mensagem': "Houve um problema em salvar os dados fornecidos. O nome do modelo é a provável causa."
-    }), 400
-  except:
-    return jsonify({
-      'mensagem': "Houve algum problema em salvar os dados da IA."
-    }), 500
+#   try:
+#     add_modelo_ia(nome_ia, modelo)
+#     return jsonify({
+#       "mensagem": "Modelo de IA salvo com sucesso."
+#     }), 200
+#   except UsuarioError as e:
+#     print(e)
+#     return jsonify({
+#       'mensagem': "Houve um problema em salvar os dados fornecidos. O nome do modelo é a provável causa."
+#     }), 400
+#   except:
+#     return jsonify({
+#       'mensagem': "Houve algum problema em salvar os dados da IA."
+#     }), 500
 
 @ia_bp.route('/ias', methods=['GET'])
 def obter_ias_registradas():

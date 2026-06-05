@@ -10,6 +10,7 @@ from common.exceptions import (
 from services.germini import (
   solicitar_codigo_em_json
 )
+from services.chatgpt import solicitar_codigo_fonte
 from features.ambiente import (
   instalar_bibliotecas
 )
@@ -17,7 +18,8 @@ from features.projeto import (
   criar_projeto,
   guardar_codigo
 )
-from features.registro import registrar_mensagem_chat
+from features.registro import registrar_mensagem_chat, obter_registro_as_str
+from enums.ia import IAName
 
 microcontrolador_bp = Blueprint("microcontrolador", __name__)
 
@@ -44,14 +46,25 @@ def obter_microcontroladores():
     }), 500
   
 @microcontrolador_bp.route('/gerar', methods=['POST'])
-def gerar_compilar():
+def gerar():
   """
   Tem o objetivo de instalar as bibliotecas utilizadas no código além da criação dos arquivos.
   """
   try:
-    objeto_json = solicitar_codigo_em_json()
-    if objeto_json['bibliotecas'] is not None and len(objeto_json['bibliotecas']) > 0:
-      bibliotecas_instaladas: list = instalar_bibliotecas(objeto_json['bibliotecas'])
+    configuracao = obter_configuracao()
+
+    nome_ia_bd = configuracao.get('nome_ia')
+
+    objeto_dict = None
+    if nome_ia_bd == IAName.GEMINI:
+      objeto_dict = solicitar_codigo_em_json()
+    elif nome_ia_bd == IAName.CHATGPT:
+      objeto_dict = solicitar_codigo_fonte(obter_registro_as_str())
+    else:
+      return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
+    
+    if objeto_dict['bibliotecas'] is not None and len(objeto_dict['bibliotecas']) > 0:
+      bibliotecas_instaladas: list = instalar_bibliotecas(objeto_dict['bibliotecas'])
       print(bibliotecas_instaladas)
       
       mensagem = "Problema ao instalar a(s) biblioteca(s):"
@@ -60,7 +73,7 @@ def gerar_compilar():
         cont += 1
         if not biblioteca_status:
           problema = True
-          mensagem += f" {objeto_json["bibliotecas"][cont - 1]}"
+          mensagem += f" {objeto_dict["bibliotecas"][cont - 1]}"
       
       if problema:
         jsonify ({
@@ -68,9 +81,9 @@ def gerar_compilar():
         }), 202
     
     mensagem = ""
-    codigos = objeto_json['codigos']
+    codigos = objeto_dict['codigos']
+    criar_projeto()
     for code_index in codigos:
-      criar_projeto()
       mensagem += guardar_codigo(code_index['codigo'],code_index['nome_arquivo'])
 
     registrar_mensagem_chat('sistema', mensagem)

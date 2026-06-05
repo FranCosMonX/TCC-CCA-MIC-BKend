@@ -1,7 +1,8 @@
 from common.exceptions import SistemaError
-from bd import criar_registro_chat
+from typing import Literal
+from bd import criar_registro_chat, obter_registros_chat
 
-def registrar_mensagem_chat(entidade = None, mensagem: str = None):
+def registrar_mensagem_chat(entidade: Literal['usuario', 'ia', 'sistema'] = None, mensagem: str = None):
   """
   Função utilizada para registrar toda e qualquer mensagem no sistema que será mostrado para o usuário.
   """
@@ -12,3 +13,14 @@ def registrar_mensagem_chat(entidade = None, mensagem: str = None):
     criar_registro_chat(entidade, mensagem)
   except Exception as e:
     raise SistemaError("Houve um problema em salvar a mensagem do chat no Banco de Dados.")
+  
+def obter_registro_as_str():
+  """
+  Usado para obter o registro salvo da conversa como uma string.
+  """
+  registro_completo = obter_registros_chat()
+
+  output = ""
+  for registro in registro_completo:
+    output += f"entidade: {registro.get('entidade')}, conteudo: {registro.get('mensagem')}\n" 
+  return output

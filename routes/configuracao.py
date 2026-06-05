@@ -11,6 +11,7 @@ from bd import (
   excluir_registro_chat,
   obter_registros_chat
 )
+from common.prompt import alterar_prompt_atual
 from common.exceptions import (
   AmbienteError,
   UsuarioError,
@@ -19,7 +20,8 @@ from features.ambiente import (
   preparando_ambiente,
 )
 from services.germini import atualiza_api_key_ou_modelo
-from common.prompt import alterar_prompt_atual
+from services.chatgpt import alterar_api_key, alterar_modelo
+from enums.ia import IAName
 
 configuracao_bp = Blueprint("configuracao", __name__)
 
@@ -80,6 +82,8 @@ def carregar_configuracao():
   É necessário que tenha o arquivo de banco de dados gerado.
   """
   configuracao = obter_configuracao()
+  nome_ia_db = configuracao.get('nome_ia')
+  api_key_db = configuracao['key_ai_api']
   mensagem = ""
   execucao = [configuracao['id_microcontrolador'] is not None, configuracao['key_ai_api'] is not None, configuracao['diretorio'] is not None]
   try:
@@ -90,7 +94,12 @@ def carregar_configuracao():
     mensagem += 'Não há dados suficientes para preparar o ambiente de execução de código.'
   
   try:
-    atualiza_api_key_ou_modelo(configuracao['key_ai_api'])
+    if nome_ia_db == IAName.GEMINI:
+      atualiza_api_key_ou_modelo(api_key_db)
+    elif nome_ia_db == IAName.CHATGPT:
+      alterar_api_key(api_key_db)
+    else:
+      return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
     mensagem += "Conexão com a IA realizada com êxito."
     execucao[1] = True
   except Exception as e:

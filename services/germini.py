@@ -24,7 +24,12 @@ client = None
 chat = None  
 
 def verificar_conexao(contem_dados=False, chave = None, modelo = None):
-  """Verifica a conexão com a API. Caso não esteja configurada mesmo com dados salvos, será feita a reconfiguração para reconectar."""
+  """
+  Verifica a conexão com a API. Caso não esteja configurada mesmo com dados salvos, será feita a reconfiguração para reconectar.
+  
+  Returns:
+    resultado (`boolean`) : informando se está conectado ou não ao serviço de IA.
+  """
 
   if not client and contem_dados:
     print("DEBUG - CONEXÃO COM IA PERDIDA, TENTANDO CONEXTAR NOVAMENTE.")

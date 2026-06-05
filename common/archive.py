@@ -1,5 +1,6 @@
 from bd import obter_configuracao
 from common.exceptions import SistemaError, UsuarioError
+from pathlib import Path
 import os
 
 def criar_diretorios(nome:str):
@@ -27,26 +28,36 @@ def criar_diretorios(nome:str):
       os.makedirs(diretorio_novo)
       print(f"Diretório '{diretorio_novo}' criado com sucesso.")
   except Exception as e:
-      SistemaError(f"Erro inesperado na função criar diretório: {e}")
+    SistemaError(f"Erro inesperado na função criar diretório: {e}")
 
-def salvar_arquivo(diretorio:str, nome_arquivo: str, conteudo: str):
+def salvar_arquivo(diretorio:str, nome_arquivo: str, conteudo: str, diretorio_do_projeto:bool= False):
   """
   Salva o conteúdo em um arquivo no diretório 'temporario'.
   O arquivo é sobrescrito se já existir.
 
   Args:
-      nome_arquivo (str): O nome do arquivo a ser salvo (ex: `'meu_codigo.c'`).
-      conteudo (str): O conteúdo a ser escrito no arquivo.
-  Exceptions:
-      SistemaError: erro inesperado.
-  """
-  caminho_completo = os.path.join(diretorio, nome_arquivo)
+    diretorio (`string`) : Diretorio onde o arquivo será salvo
+    nome_arquivo (`string`): O nome do arquivo a ser salvo (ex: `'meu_codigo.c'`).
+    conteudo (`string`): O conteúdo a ser escrito no arquivo.
+    diretorio_do_projeto (`boolean`) : Se o diretório leva em consideração onde o projeto está armazenado. Se `True`, as pastas do diretório passado serão criados com base na URI do projeto. Se `False`, o arquivo será salvo no diretório passado e já existente.
   
+  Exceptions:
+    SistemaError: erro inesperado.
+  """
+
+  if diretorio_do_projeto and not os.path.exists(diretorio):
+    os.makedirs(Path(diretorio))
+
+  if not os.path.exists(diretorio):
+    SistemaError(f"Archive.py em salvar_arquivo: O diretório {diretorio} não existe.")
+  
+  caminho_completo = os.path.join(diretorio, nome_arquivo)
+  print(f'DEBUG - CRIANDO ARQUIVO: {caminho_completo}')
   try:
     with open(caminho_completo, 'w', encoding='utf-8') as f:
       f.write(conteudo)
   except Exception as e:
-      SistemaError(f"Erro ao salvar o arquivo '{nome_arquivo}': {e}")
+    SistemaError(f"Erro ao salvar o arquivo '{nome_arquivo}': {e}")
 
 def criar_arquivo_bat(caminho: str, text:str):
   """
