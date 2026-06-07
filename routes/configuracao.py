@@ -8,20 +8,16 @@ from bd import (
   get_mic_by_id,
   resetar_configs,
   update_status_mic_config,
-  excluir_registro_chat,
-  obter_registros_chat
+  excluir_registro_chat
 )
 from common.prompt import alterar_prompt_atual
 from common.exceptions import (
   AmbienteError,
   UsuarioError,
 )
-from features.ambiente import (
+from utils.ambiente import (
   preparando_ambiente,
 )
-from services.germini import atualiza_api_key_ou_modelo
-from services.chatgpt import alterar_api_key, alterar_modelo
-from enums.ia import IAName
 
 configuracao_bp = Blueprint("configuracao", __name__)
 
@@ -76,57 +72,6 @@ def remover_configuracao():
       'mensagem': 'Houve um problema ao resetar os dados.'
     }), 500
 
-@configuracao_bp.route('/CarregarConfiguracao', methods=['POST'])
-def carregar_configuracao():
-  """
-  É necessário que tenha o arquivo de banco de dados gerado.
-  """
-  configuracao = obter_configuracao()
-  nome_ia_db = configuracao.get('nome_ia')
-  api_key_db = configuracao['key_ai_api']
-  mensagem = ""
-  execucao = [configuracao['id_microcontrolador'] is not None, configuracao['key_ai_api'] is not None, configuracao['diretorio'] is not None]
-  try:
-    preparando_ambiente(configuracao['package_id_mic'])
-    mensagem += "Ambiente de execução configurado com exito."
-    execucao[0] = True
-  except Exception as e:
-    mensagem += 'Não há dados suficientes para preparar o ambiente de execução de código.'
-  
-  try:
-    if nome_ia_db == IAName.GEMINI:
-      atualiza_api_key_ou_modelo(api_key_db)
-    elif nome_ia_db == IAName.CHATGPT:
-      alterar_api_key(api_key_db)
-    else:
-      return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
-    mensagem += "Conexão com a IA realizada com êxito."
-    execucao[1] = True
-  except Exception as e:
-    mensagem += "Não há dados suficientes para tentar se conectar a API da IA."
-  
-  if not configuracao['diretorio']:
-    mensagem += "O campo diretório se encontra vazio, preencha o campo corretamente."
-  else:
-    execucao[2] = True
-  
-  registros = obter_registros_chat()
-  alterar_prompt_atual(f"SISTEMA: Considere as mensagens salvas contidas em {registros}.\nNão mencione isso ao usuário", True)
-  if execucao[0] or execucao[1] or execucao[2]:
-    return jsonify({
-      'mensagem': mensagem
-    }), 200
-  else:
-    try:
-      resetar_configs()
-      return jsonify({
-        'mensagem': "Não foi possivel realizar esta ação. Atualize os dados."
-      }), 400
-    except Exception as e:
-      return jsonify({
-        'mensagem': e
-      }), 500
-
 @configuracao_bp.route('/configuracaoGeral', methods=['POST'])
 def definir_conf_geral():
   """
@@ -146,16 +91,16 @@ def definir_conf_geral():
   comentario_codigo = request.json.get('comentario_codigo')
   
   configuracao = obter_configuracao()
-  status_chave_verificada = configuracao['api_key_valid']
-  chave_verificada = configuracao["key_ai_api"]
+  status_chave_verificada_bd = configuracao['api_key_valid']
+  chave_verificada_bd = configuracao["key_ai_api"]
   
-  if not status_chave_verificada:
+  if not status_chave_verificada_bd:
     return jsonify({
       'mensagem': "Primeiro verifique se a chave de acesso é válida.",
       'campo': 'key_ai_api'
     }), 400
     
-  if  chave_verificada != key_ai_api:
+  if  chave_verificada_bd != key_ai_api:
     return jsonify({
       'mensagem': "Houve a alteração da chave de acesso após confirmar sua validação. Inclua a mesma ou valide uma nova.",
       'campo': 'key_ai_api'
@@ -172,10 +117,9 @@ def definir_conf_geral():
       'mensagem': 'O caminho onde os arquivos serão salvos é invalido.',
       'campo': 'diretorio'
     }), 400
-  print("passouu final")
+  
   try:
     msg = atualizar_dadosConf_gerais(nome_projeto, diretorio,ver_codigo,comentario_codigo)
-    # alterarPrompting(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}, o nome do projeto é: {nome_projeto}")
     alterar_prompt_atual(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}, o nome do projeto é: {nome_projeto}")
     return jsonify({
       'mensagem': msg,

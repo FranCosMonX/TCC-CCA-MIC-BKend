@@ -1,24 +1,22 @@
 from flask import Blueprint, jsonify, request
 from bd import get_all_mic, obter_configuracao
-from features.projeto import compilar_projeto, gravar_projeto
+from services.gemini import solicitar_codigo_fonte as solicitar_codigo_fonte_gemini
+from services.chatgpt import solicitar_codigo_fonte as solicitar_codigo_fonte_chatgpt
+from utils.projeto import compilar_projeto, gravar_projeto
+from utils.registro import registrar_mensagem_chat, obter_registro_as_str
+from utils.ambiente import (
+  instalar_bibliotecas
+)
+from utils.projeto import (
+  criar_projeto,
+  guardar_codigo
+)
 from common.exceptions import (
   UsuarioError,
   SistemaError, 
   AmbienteError,
   JsonError
 )
-from services.germini import (
-  solicitar_codigo_em_json
-)
-from services.chatgpt import solicitar_codigo_fonte
-from features.ambiente import (
-  instalar_bibliotecas
-)
-from features.projeto import (
-  criar_projeto,
-  guardar_codigo
-)
-from features.registro import registrar_mensagem_chat, obter_registro_as_str
 from enums.ia import IAName
 
 microcontrolador_bp = Blueprint("microcontrolador", __name__)
@@ -56,10 +54,11 @@ def gerar():
     nome_ia_bd = configuracao.get('nome_ia')
 
     objeto_dict = None
+    registro = obter_registro_as_str()
     if nome_ia_bd == IAName.GEMINI:
-      objeto_dict = solicitar_codigo_em_json()
+      objeto_dict = solicitar_codigo_fonte_gemini(registro)
     elif nome_ia_bd == IAName.CHATGPT:
-      objeto_dict = solicitar_codigo_fonte(obter_registro_as_str())
+      objeto_dict = solicitar_codigo_fonte_chatgpt(registro)
     else:
       return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
     

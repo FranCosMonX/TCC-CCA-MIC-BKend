@@ -2,7 +2,7 @@ from common.exceptions import SistemaError
 from typing import Literal
 from bd import criar_registro_chat, obter_registros_chat
 
-def registrar_mensagem_chat(entidade: Literal['usuario', 'ia', 'sistema'] = None, mensagem: str = None):
+def registrar_mensagem_chat(entidade: Literal['usuario', 'ia', 'sistema', 'ia_model_create_json'] = None, mensagem: str = None):
   """
   Função utilizada para registrar toda e qualquer mensagem no sistema que será mostrado para o usuário.
   """

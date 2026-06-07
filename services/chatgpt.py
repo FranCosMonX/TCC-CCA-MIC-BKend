@@ -5,26 +5,13 @@ Classe utilizada para controlar a interação entre usuário e a IA da OpenAI ch
 - **Não há o registro das mensagens no banco de dados, com exceção da instrução e input inicial para o chat.**
 """
 from common.archive import salvar_arquivo
-from common.exceptions import UsuarioError, IAError, SistemaError
+from common.exceptions import UsuarioError, IAError, SistemaError, RequisicaoError
 from common.prompt import gerar_instrucao_chat, obter_instrucao_chat, gerar_prompt_json_project, obter_prompt_json_project, obter_prompt_atual
-from features.registro import registrar_mensagem_chat, obter_registro_as_str
+from utils.registro import registrar_mensagem_chat, obter_registro_as_str
 from openai import OpenAI, AuthenticationError, APIStatusError, APIConnectionError
-from typing import List
-from pydantic import BaseModel, ConfigDict
+from core.Modelo_de_resposta import Projeto_Arduino_ChatGPT
 from pathlib import Path
 import os, json
-
-class Codigo_fonte (BaseModel):
-  id: int
-  nome_arquivo: str
-  codigo: str
-
-class Projeto_Arduino (BaseModel):
-  model_config = ConfigDict(extra='forbid')
-  numero_de_arquivos: int
-  nome_projeto: str
-  bibliotecas: List[str]
-  codigos: List[Codigo_fonte]
 
 client = None
 client_model = None
@@ -40,6 +27,9 @@ def alterar_api_key(api_key: str = None):
   - **Não registra a api_key no banco de dados ou arquivo.**
   - **Não registra a alteração.**
   
+  Raises:
+    UsuarioError : Problemas decorridos por informações incompletas ou erradas do cliente ou do usuário.
+
   Returns:
     `void`: Se tido correr bem.
   """
@@ -58,6 +48,9 @@ def alterar_modelo(modelo: str):
   - **Não registra o modelo de IA no banco de dados ou arquivo.**
   - **Não registra a alteração.**
   
+  Raises:
+    UsuarioError : Problemas decorridos por informações incompletas ou erradas do cliente ou do usuário.
+
   Returns:
     `void`: Se tido correr bem.
   """
@@ -80,11 +73,11 @@ def testar_conexao():
     IAError : Problemas com a API da IA.
     
   Returns:
-    `void`: Se tido correr bem.
+    valor (`boolean`) : status de conexão com a IA
   """
   global conexao_ok
   if not client or not client_model:
-    return UsuarioError("É necessário passar a API Key e modelo a ser usado pela IA.")
+    return False
   
   try:
     client.responses.create(
@@ -104,6 +97,42 @@ def testar_conexao():
   except Exception as e:
     raise IAError(f"Houve um problema ao tentar se conectar com a IA em chatgpt.py testar_conexao(): {e}")
 
+def carregar_contexto_anterior(historico : str = None):
+  """
+  Usado para carregar o contexto da conversa anterior á desconexão com a IA para uma nova sessão.
+
+  - **Apenas verifica a conexão.**
+  - **Não registra a alteração.**
+
+  Params:
+    historico (`string`) : contendo o histórico não nulo e não vazio salvo.
+
+  Raises:
+    UsuarioError : Problemas decorridos por informações incompletas ou erradas do cliente ou do usuário.
+    IAError : Problemas com a API da IA.
+    SistemaError : Inconsistência lógica no passo a passo para iniciar o chat.
+
+  Returns:
+    Object (`NoneType`) : se tudo der certo, não retorna nada.
+  """
+  if not client_model or not client:
+    raise UsuarioError("É necessário informar a API Key e Modelo a ser utilizado no chat.")
+  if not conexao_ok:
+    raise UsuarioError("Não foi possivel se conectar ao sistema da IA. Verifique a conexão antes de iniciar o Chat.")
+  if not historico or len(historico) == 0:
+    raise SistemaError("Está tentando carregar o contexto anterior com dados vazios.")
+  
+  try:
+    enviar_mensagem(f"MENSAGEM DO SISTEMA: Considere as configurações e conversas salvas na sessão anterior para continuar ajudando o usuário.\n{historico}")
+  except UsuarioError as e:
+    raise UsuarioError(e.message)
+  except IAError as e:
+    raise IAError(e.mensagem)
+  except SistemaError as e:
+    raise SistemaError(e.mensagem)
+  except Exception as e:
+    raise RequisicaoError(f"Erro ao enviar o contexto para a IA.")
+    
 def solicitar_codigo_fonte(historico: str = None):
   """
   Usado para solicitar a construução do código por meio de outra requisição separada da usada no chat, mas usando as conversas entre o usuário e IA para alimentar.
@@ -114,13 +143,14 @@ def solicitar_codigo_fonte(historico: str = None):
     - Modelo de IA: gpt-4o
 
   - **Apenas verifica a conexão.**
-  - **Não registra a alteração.**
+  - **Apenas registra o código gerado.**
   
   Raises:
     UsuarioError : Problemas decorridos por informações incompletas ou erradas do cliente ou do usuário.
     IAError : Problemas com a API da IA.
+    SistemaError : Inconsistência lógica no passo a passo para iniciar o chat.
 
-  Returns
+  Returns:
     Object (`dict`) : contendo os dados solicitados
   """
   SOURCE_RESPONSE_PATH = Path(os.getcwd()) / 'source' / 'response'
@@ -131,8 +161,8 @@ def solicitar_codigo_fonte(historico: str = None):
       model='gpt-4o',
       temperature=0.1,
       instructions=obter_prompt_json_project(),
-      text_format=Projeto_Arduino,
-      input="Me retorne o objeto solicitado de acordo com o histórico de conversa do usuárioo. É importante que todo o código gerado seja intnegro."
+      text_format=Projeto_Arduino_ChatGPT,
+      input="Me retorne o objeto solicitado de acordo com o histórico de conversa do usuárioo. É importante que todo o código gerado seja integro."
     )
 
     print('DEBUG - RESPOSTA DA IA RECEBIDA\n\n')
@@ -144,7 +174,9 @@ def solicitar_codigo_fonte(historico: str = None):
       True
     )
 
-    print('DEBUG - ARQUIVO JSON GERADO.')
+    registrar_mensagem_chat('sistema', 'Os arquivos do proojeto foram gerados.')
+    registrar_mensagem_chat('ia_model_create_json', response.output_parsed.model_dump_json())
+    # print('DEBUG - ARQUIVO JSON GERADO.')
     return json.loads(response.output_parsed.model_dump_json())
   except AuthenticationError as e:
     raise UsuarioError(e.message)
@@ -155,7 +187,7 @@ def solicitar_codigo_fonte(historico: str = None):
   except SistemaError as e:
     raise SistemaError(e.mensagem)
   except Exception as e:
-    raise IAError(f"Houve um problema ao tentar se conectar com a IA em chatgpt.py solicitar_codigo_fonte(): {e}")
+    raise RequisicaoError(f"Houve um problema ao tentar se conectar com a IA em chatgpt.py solicitar_codigo_fonte(): {e}")
 
 def enviar_mensagem(mensagem: str = None):
   """
@@ -221,9 +253,9 @@ def iniciar_chat():
   global current_client_id
 
   if not client or not client_model:
-    return UsuarioError("É necessário passar a API Key e modelo a ser usado pela IA.")
+    raise UsuarioError("É necessário passar a API Key e modelo a ser usado pela IA.")
   if not conexao_ok:
-    return UsuarioError("Não foi possivel se conectar ao sistema da IA. Verifique a conexão antes de iniciar o Chat.")
+    raise UsuarioError("Não foi possivel se conectar ao sistema da IA. Verifique a conexão antes de iniciar o Chat.")
   
   gerar_instrucao_chat()
   
@@ -234,15 +266,17 @@ def iniciar_chat():
         model=client_model,
         instructions=obter_instrucao_chat(),
         input=INPUT,
-        temperature=0.1
+        temperature=0.2
       )
 
       if len(obter_registro_as_str()) == 0:
         registrar_mensagem_chat('sistema', obter_instrucao_chat())
         registrar_mensagem_chat('sistema', INPUT)
-      else:
-        print('degub - registrouu mudança')
-        registrar_mensagem_chat('sistema', obter_prompt_atual())
+      # if len(obter_registro_as_str()) == 0:
+      #   registrar_mensagem_chat('sistema', obter_instrucao_chat())
+      #   registrar_mensagem_chat('sistema', INPUT)
+      # else:
+      #   registrar_mensagem_chat('sistema', obter_prompt_atual())
 
       current_client_id = response.id
     else:

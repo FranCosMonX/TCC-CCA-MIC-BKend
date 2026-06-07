@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
+from common.exceptions import UsuarioError, IAError, SistemaError
+from enums.ia import IAName
+from utils.registro import obter_registro_as_str
 from bd import (
-  add_modelo_ia,
   obter_modelo_por_nome_ia,
   obter_modelos_disponiveis,
   obter_modelo_por_id,
@@ -8,13 +10,22 @@ from bd import (
   tem_modelo_da_ia,
   atualiza_chave_acesso_ai,
   edit_validacao_api_key,
-  obter_configuracao,
-  obter_registros_chat
+  obter_configuracao
 )
-from common.exceptions import UsuarioError, IAError, SistemaError
-from services.germini import atualiza_api_key_ou_modelo, verificar_conexao
-from services.chatgpt import alterar_api_key, alterar_modelo, testar_conexao, conexao_ok as conexao_gpt_ok
-from enums.ia import IAName
+from services.gemini import (
+  alterar_api_key as alterar_api_key_gemini,
+  alterar_modelo as alterar_modelo_gemini,
+  testar_conexao as testar_conexao_gemini,
+  conexao_ok as conexao_ok_gemini,
+  carregar_contexto_anterior as carregar_contexto_anterior_gemini
+)
+from services.chatgpt import (
+  alterar_api_key as alterar_api_key_chatgpt,
+  alterar_modelo as alterar_modelo_chatgpt,
+  testar_conexao as testar_conexao_chatgpt,
+  conexao_ok as conexao_ok_chatgpt,
+  carregar_contexto_anterior as carregar_contexto_anterior_chagpt
+)
 
 ia_bp = Blueprint("ia", __name__)
 
@@ -35,14 +46,19 @@ def reconectar():
       mensagem_error += "Não foi informado qual a IA será utilizada."
 
     if nome_ia_bd == IAName.GEMINI:
-      resposta = verificar_conexao(True,api_key_bd, modelo_bd)
+      print(f"conexao: {conexao_ok_gemini}")
+      if not conexao_ok_gemini:
+        alterar_api_key_gemini(api_key_bd)
+        alterar_modelo_gemini(modelo_bd)
+      resposta = testar_conexao_gemini()
     elif nome_ia_bd == IAName.CHATGPT:
-      print(f"conexao: {conexao_gpt_ok}")
-      if not conexao_gpt_ok:
-        alterar_api_key(api_key_bd)
-        alterar_modelo(modelo_bd)
-      resposta = testar_conexao()
+      print(f"conexao: {conexao_ok_chatgpt}")
+      if not conexao_ok_chatgpt:
+        alterar_api_key_chatgpt(api_key_bd)
+        alterar_modelo_chatgpt(modelo_bd)
+      resposta = testar_conexao_chatgpt()
     else:
+      edit_validacao_api_key(False)
       return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
     
     if resposta:
@@ -54,8 +70,9 @@ def reconectar():
       'mensagem': errU.mensagem
     }), 400
   except IAError as iE:
+    edit_validacao_api_key(False)
     return jsonify({
-      'mensagem': f'Houve um problema inesperado com relaçãõ aos serviços de IA. {iE}'
+      'mensagem': f'Houve um problema inesperado com relação aos serviços de IA. {iE}'
     }), 500
   except SistemaError as sE:
     # print(sE)
@@ -78,32 +95,34 @@ def verifica_conexao():
     404: Recurso não existe.
     500: Problemas com o backend.
   """
-  ia = request.json.get('ia')
-  api = request.json.get('key_ai_api')
-  modelo = request.json.get('modelo')
+  ia_param = request.json.get('ia')
+  api_key_param = request.json.get('key_ai_api')
+  modelo_param = request.json.get('modelo')
 
-  if ia is None or modelo is None or ia == "" or modelo == "":
+  if ia_param is None or modelo_param is None or ia_param == "" or modelo_param == "":
     return jsonify({
       'mensagem': "Faltam dados para verificar a conexão com o servidor da IA."
     }), 400
 
-  id_modelo_ia = tem_modelo_da_ia(ia, modelo)
+  id_modelo_ia = tem_modelo_da_ia(ia_param, modelo_param)
   if id_modelo_ia is None:
     return jsonify({
       'mensagem': "A aplicação só suporta a ligação com alguns modelos no momoento."
     }), 400
 
   try:
-    if ia == IAName.GEMINI:
-      atualiza_api_key_ou_modelo(api, modelo)
-    elif ia == IAName.CHATGPT:
-      alterar_api_key(api)
-      alterar_modelo(modelo)
-      testar_conexao()
+    if ia_param == IAName.GEMINI:
+      alterar_api_key_gemini(api_key_param)
+      alterar_modelo_gemini(modelo_param)
+      testar_conexao_gemini()
+    elif ia_param == IAName.CHATGPT:
+      alterar_api_key_chatgpt(api_key_param)
+      alterar_modelo_chatgpt(modelo_param)
+      testar_conexao_chatgpt()
     else:
       return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
     
-    atualiza_chave_acesso_ai(id_modelo_ia, api)
+    atualiza_chave_acesso_ai(id_modelo_ia, api_key_param)
     edit_validacao_api_key(True)
     return jsonify({
       'mensagem': 'Conectado com sucesso'
@@ -113,6 +132,7 @@ def verifica_conexao():
       'mensagem': errU.mensagem
     }), 400
   except IAError as iE:
+    edit_validacao_api_key(False)
     return jsonify({
       'mensagem': f'Houve um problema inesperado com relaçãõ aos serviços de IA. {iE}'
     }), 500
@@ -121,38 +141,44 @@ def verifica_conexao():
       'mensagem': f'Houve um problema em armazenar chave da API_KEY. {e}'
     }), 500
 
-# @ia_bp.route('/ia/adicionarModelo', methods=['POST'])
-# def adicionarModeloIA():
-#   nome_ia = request.json.get('nome_ia')
-#   modelo = request.json.get('modelo')
+@ia_bp.route('/ia/carregar_contexto_anterior', methods=['POST'])
+def carregar_contexto_anterior_route():
+  registro = obter_registro_as_str()
 
-#   campos_faltantes = []
-#   if nome_ia is None or nome_ia == "":
-#     campos_faltantes.append("nome_ia")
+  if not registro or len(registro) == 0:
+    return jsonify({'mensagem': 'Não foi encontrado registro de conversa anterior.'}), 404
 
-#   if modelo is None or modelo =="":
-#     campos_faltantes.append("modelo")
+  configuracao = obter_configuracao()
+  nome_ia_db = configuracao.get('nome_ia')
 
-#   if len(campos_faltantes) > 0:
-#     return jsonify({
-#       "mensagem": "Solicitação incompleta devido a falta de informações.",
-#       "campos": campos_faltantes
-#     }), 404
-  
-#   try:
-#     add_modelo_ia(nome_ia, modelo)
-#     return jsonify({
-#       "mensagem": "Modelo de IA salvo com sucesso."
-#     }), 200
-#   except UsuarioError as e:
-#     print(e)
-#     return jsonify({
-#       'mensagem': "Houve um problema em salvar os dados fornecidos. O nome do modelo é a provável causa."
-#     }), 400
-#   except:
-#     return jsonify({
-#       'mensagem': "Houve algum problema em salvar os dados da IA."
-#     }), 500
+  try:
+    if nome_ia_db == IAName.GEMINI:
+      carregar_contexto_anterior_gemini(registro)
+    elif nome_ia_db == IAName.CHATGPT:
+      carregar_contexto_anterior_chagpt(registro)
+    else:
+      return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
+
+    return jsonify({'mensagem': 'Contexto enviado para a nova sessão de chat.'}), 200
+  except UsuarioError as errU:
+    return jsonify({
+      'mensagem': errU.mensagem
+    }), 400
+  except IAError as iE:
+    edit_validacao_api_key(False)
+    return jsonify({
+      'mensagem': f'Houve um problema inesperado com relaçãõ aos serviços de IA. {iE}'
+    }), 500
+  except SistemaError as sE:
+    # print(sE)
+    return jsonify({
+      'mensagem': sE.mensagem
+    }), 500
+  except Exception as e:
+    return jsonify({
+      'mensagem': f'Houve um problema em armazenar chave da API_KEY. {e}'
+    }), 500
+
 
 @ia_bp.route('/ias', methods=['GET'])
 def obter_ias_registradas():
