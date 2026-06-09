@@ -1,13 +1,32 @@
-database.bd
-venv/
-venv
-
-database.bd
-historico.txt
-*.txt
-
+# Python bytecode (compiled files)
 __pycache__/
-__pycache__
+*.py[cod]
+*$py.class
 
-resumo_conversa_final.json
-response_arquivo_gerado.json
+# Virtual environments (always exclude local dependencies)
+venv/
+.venv/
+env/
+ENV/
+
+# Flask-specific instances and cache
+instance/
+.webassets-cache
+
+# Environment variables and secrets (CRITICAL: Do not commit keys)
+.env
+.flaskenv
+*.env
+
+# SQLite databases (if used for local testing)
+*.db
+*.sqlite3
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ide and editor settings
+.vscode/
+.idea/
