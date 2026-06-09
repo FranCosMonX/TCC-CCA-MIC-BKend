@@ -28,6 +28,7 @@ Atualmente:
 - Não existem mecanismos completos de autenticação;
 - O sistema não foi projetado para exposição pública na internet;
 - O uso remoto deve ser realizado com cautela.
+- Necessidade do Windows ter o `winget`, para instalar o arduino-cli automaticamente.
 
 Portanto, recomenda-se utilizar o sistema apenas em ambientes controlados para fins acadêmicos, testes e desenvolvimento.
 
