@@ -36,6 +36,7 @@ Portanto, recomenda-se utilizar o sistema apenas em ambientes controlados para f
 O sistema foi desenvolvido utilizando:
 
 - Python;
+  > A aplicação funciona corretamente com python na versão 3.13 e 3.14.
 - Flask;
 - Ambiente virtual (`venv`);
 - VSCode como IDE principal.
@@ -44,9 +45,9 @@ O sistema foi desenvolvido utilizando:
 
 O sistema foi desenvolvido utilizando o framework Flask em um ambiente virtual Python, com o VSCode como principal IDE. Entretanto, para preparar o ambiente de execução, basta utilizar o terminal do Windows e seguir os passos descritos abaixo:
 
-- Estar no diretório onde se encontram todos os arquivos do projeto, incluindo o arquivo `requirements.txt`;
+- O terminal deve ser aberto na raiz do projeto onde se encontram todos os arquivos da aplicação, incluindo o arquivo `requirements.txt` que contém as dependências;
 
-- Criar um ambiente virtual Python:
+- Criando um ambiente virtual Python para rodas a aplicação:
   ```console
   python -m venv venv
   ```

@@ -38,7 +38,7 @@ def add_modelo_ia(ia_name, modelo_disponivel):
     cursor = db.cursor()
     cursor.execute('INSERT INTO ia(nome_ia, modelo_disponivel) VALUES (?,?)', (ia_name, modelo_disponivel))
     db.commit()
-    print('DEBUG - Modelo salvo como sucesso')
+    # print('DEBUG - Modelo salvo como sucesso')
   except sqlite3.IntegrityError as ie:
     raise UsuarioError(f"DEBUG - ERROR bd.py em ADD_MODELO_IA: {ie}")
   except sqlite3.Error as e:
@@ -73,7 +73,7 @@ def obter_modelos_disponiveis():
     resultado = cursor.fetchall()
 
     ias_disponiveis = [dict(linha) for linha in resultado]
-    print(ias_disponiveis)
+    # print(ias_disponiveis)
     return ias_disponiveis
   except Exception as e:
     print(f"DEBUG - ERROR bd.py em obter_ias_disponiveis() - {e}")
@@ -92,7 +92,7 @@ def obter_modelo_por_nome_ia(nome_ia:str):
     
     if len(resultado) == 0:
       return None
-    print(resultado)
+    # print(resultado)
     return resultado
   except Exception as e:
     raise Exception(f' DEBUG - error em obter_modelo_por_nome_ia em bd.py: {str(e)}')
@@ -170,7 +170,7 @@ def criar_config_default():
     raise Exception(f'error: {str(e)}')
   finally:
     db.close()
-    print('funcao finalizada')
+    # print('funcao finalizada')
 
 def resetar_configs():
   """
