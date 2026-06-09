@@ -57,8 +57,10 @@ def preparando_ambiente(package_id:str=None):
   
   exit /b 0
   """
-  
-  criar_diretorios("config")
+  DIRETORIO_CONFIG = Path(configuracao.get('diretorio')) / 'config'
+  if not os.path.exists(DIRETORIO_CONFIG):
+    os.makedirs(DIRETORIO_CONFIG)
+  # criar_diretorios("config")
   salvar_arquivo(URI_CONFIG, 'ambiente_inicial.bat', BAT_TEXT_INICIAL)
   
   retorno = subprocess.run(os.path.join(URI_CONFIG, 'ambiente_inicial.bat'), shell=True)

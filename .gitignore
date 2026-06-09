@@ -20,6 +20,7 @@ instance/
 
 # SQLite databases (if used for local testing)
 *.db
+database.db
 *.sqlite3
 
 # Testing and coverage
