@@ -35,7 +35,6 @@ def definir_usr():
       'mensagem': "Dados do usuário alterados com êxito."
     }), 200
   except Exception as e:
-    print(e)
     return jsonify({
       'error': f'{e}'
     }), 400

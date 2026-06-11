@@ -18,18 +18,18 @@ from common.exceptions import (
   JsonError
 )
 from enums.ia import IAName
+from enums.entidade import Entidade
 
 microcontrolador_bp = Blueprint("microcontrolador", __name__)
 
 @microcontrolador_bp.route('/microcontrolador', methods=['GET'])
 def obter_microcontroladores():
   """
-  Descrição:
+  Usado para obter todos os microcontroladores disponiveis na aplicação.
   
-    Usado para obter todos os microcontroladores disponiveis na aplicação.
-  
-    200: Parâmetros salvos com sucesso.
-    500: Problemas com o backend.
+  Raises:
+    200 : Parâmetros salvos com sucesso.
+    500 : Problemas com o backend.
   """
   try:
     resultadoo = get_all_mic()
@@ -46,7 +46,14 @@ def obter_microcontroladores():
 @microcontrolador_bp.route('/gerar', methods=['POST'])
 def gerar():
   """
-  Tem o objetivo de instalar as bibliotecas utilizadas no código além da criação dos arquivos.
+  Tem o objetivo de solicitar a geração do código-fonte para a IA, instalar as bibliotecas utilizadas no código além da criação dos arquivos referentes ao projeto.
+
+  Raises:
+    200 : Parâmetros salvos com sucesso.
+    202 : Instalação de bibliotecas incompletas
+    400 : Erro do lado do usuário / cliente
+    404 : Não existe o recurso solicitado.
+    500 : Houve algum erro no sistema
   """
   try:
     configuracao = obter_configuracao()
@@ -85,7 +92,7 @@ def gerar():
     for code_index in codigos:
       mensagem += guardar_codigo(code_index['codigo'],code_index['nome_arquivo'])
 
-    registrar_mensagem_chat('sistema', mensagem)
+    registrar_mensagem_chat(Entidade.ASSISTENTE_DO_SISTEMA, mensagem)
     return jsonify({'mensagem': mensagem}), 200
   except JsonError as jE:
     print(f"DEBUG - ERROR {jE.mensagem}")
@@ -96,6 +103,15 @@ def gerar():
   
 @microcontrolador_bp.route('/compilar', methods=['POST'])
 def compilar_codigo():
+  """
+  Utilizado para compilar o projeto recém criado.
+
+  Raises:
+    200 : projeto compilado com sucesso
+    400 : Erro do lado do usuário / cliente
+    409 : Solicitação entendida mas não realizada devido a problemas internos ou falta de recursos.
+    500 : Houve algum erro no sistema
+  """
   try:
     configuracao = obter_configuracao()
     if configuracao['diretorio'] in ['', None]:
@@ -103,9 +119,10 @@ def compilar_codigo():
         'mensagem': 'É necessário que o projeto esteja criado no diretório especificado nas configurações gerais.'
       }), 400
     
-    resultaado = compilar_projeto()
+    resultado = compilar_projeto()
+    registrar_mensagem_chat(Entidade.ASSISTENTE_DO_SISTEMA, resultado)
     return jsonify({
-      'mensagem': resultaado
+      'mensagem': resultado
     }), 200
   except UsuarioError as uE:
     # print(uE)
@@ -130,9 +147,17 @@ def compilar_codigo():
 
 @microcontrolador_bp.route("/gravar", methods=['POST'])
 def gravar_codigo():
+  """
+  Utilizado para gravar o projeto compilado previamente, no microcoontrolador
+  
+  Raises:
+    200 : projeto gravado com sucesso
+    400 : Erro do lado do usuário / cliente
+    500 : Houve algum erro no sistema
+  """
   try:
     resultado = gravar_projeto()
-
+    registrar_mensagem_chat(Entidade.ASSISTENTE_DO_SISTEMA, resultado)
     return jsonify({
       'mensagem': resultado
     }), 200

@@ -88,8 +88,8 @@ def reconectar():
 def verifica_conexao():
   """
   Usado para verificar a conexão com a AI. É enviado uma requisição simples.
-  Returns:
   
+  Raises:
     200: Conexão bem sucedida.
     400: Campo ou alguma entrada de usuário incorreta.
     404: Recurso não existe.
@@ -143,6 +143,15 @@ def verifica_conexao():
 
 @ia_bp.route('/ia/carregar_contexto_anterior', methods=['POST'])
 def carregar_contexto_anterior_route():
+  """
+  Usado para enviar o histórico de mensagens para a IA criada após a reconexão (nova sessão de conversas)
+
+  Raises:
+    200: Contexto enviado com sucesso.
+    400: Campo ou alguma entrada de usuário incorreta.
+    404: Recurso não existe.
+    500: Problemas com o backend.
+  """
   registro = obter_registro_as_str()
 
   if not registro or len(registro) == 0:
@@ -182,6 +191,15 @@ def carregar_contexto_anterior_route():
 
 @ia_bp.route('/ias', methods=['GET'])
 def obter_ias_registradas():
+  """
+  Usado para obter todas as IAs cujos modelos são compatíveis com a aplicação.
+  
+  Raises:
+    200 (Object Json): Solicitação atendida.
+    400: Campo ou alguma entrada de usuário incorreta.
+    404: Recurso não existe.
+    500: Problemas com o backend.
+  """
   resultado = obter_ias_disponiveis()
   if resultado is None:
     return jsonify("Nenhum modelo de IA registrado"), 404
@@ -189,6 +207,15 @@ def obter_ias_registradas():
 
 @ia_bp.route('/ias/modelos', methods=['GET'])
 def obter_modelos_de_ia_disponiveis():
+  """
+  Usado para obter todos os modelos de uma IA em especifica, cujo o nome é passado pelo cliente.
+
+  Raises:
+    200 (Object Json): Solicitação atendida.
+    400: Campo ou alguma entrada de usuário incorreta.
+    404: Recurso não existe.
+    500: Problemas com o backend.
+  """
   resultado = obter_modelos_disponiveis()
   if resultado is None:
     return jsonify("Nenhum modelo de IA registrado"), 404
@@ -196,6 +223,15 @@ def obter_modelos_de_ia_disponiveis():
 
 @ia_bp.route('/ias/nome/<nome_ia>', methods=['GET'])
 def obter_dados_por_nome_ia(nome_ia):
+  """
+  usado para obter o modelo por nome da IA passado pelo cliente.
+  
+  Raises:
+    200 (Object Json): Solicitação atendida.
+    400: Campo ou alguma entrada de usuário incorreta.
+    404: Recurso não existe.
+    500: Problemas com o backend.
+  """
   try:
     lista = obter_modelo_por_nome_ia(str(nome_ia))
   
@@ -217,6 +253,15 @@ def obter_dados_por_nome_ia(nome_ia):
 
 @ia_bp.route('/ias/id/<id_ia>', methods=['GET'])
 def obter_modelo_por_ia_id(id_ia):
+  """
+  Usado para obter o modelo por ID passado c=pelo cliente.
+
+  Raises:
+    200 (Object Json): Solicitação atendida.
+    400: Campo ou alguma entrada de usuário incorreta.
+    404: Recurso não existe.
+    500: Problemas com o backend.
+  """
   try:
     resultado = obter_modelo_por_id(id_ia)
     if resultado is None:

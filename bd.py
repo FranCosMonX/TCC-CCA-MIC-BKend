@@ -5,6 +5,7 @@ Contém algumas das interações diretas com o Banco de Dados, tais como INSERT 
 """
 from flask import Flask
 from common.exceptions import SistemaError, UsuarioError
+from enums.entidade import Entidade
 import sqlite3
 
 app = Flask(__name__)
@@ -407,12 +408,17 @@ def obter_registros_chat():
     return resultado
   except Exception as e:
     raise Exception(f"DEBUG - ERROR bd.py em criar_registro_chat: {e}")
-  
+
 def excluir_registro_chat_de_conversa():
+  entidades_conversa = (
+    Entidade.USUARIO.value,
+    Entidade.ASSISTENTE_DO_SISTEMA.value,
+    Entidade.IA.value,
+    Entidade.IA_MODEL_CREATE_JSON.value,)
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("DELETE FROM chat WHERE entidade = ? OR entidade = ?", ('usuario', 'ia'))
+    cursor.execute("DELETE FROM chat WHERE entidade = ? OR entidade = ? OR entidade = ? OR entidade = ?", entidades_conversa)
     db.commit()
     cursor.close()
     

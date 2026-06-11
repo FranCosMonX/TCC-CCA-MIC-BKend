@@ -18,7 +18,8 @@ from common.exceptions import (
   UsuarioError, IAError
 )
 from utils.registro import (
-  registrar_mensagem_chat
+  registrar_mensagem_chat,
+  obter_registro_as_str
 )
 from bd import (
   obter_configuracao,
@@ -161,18 +162,41 @@ def emviar_mensagem():
 
 @chat_bp.route('/chat/historico', methods=['GET'])
 def obter_historico():
+  """
+  Usado para obter o histórico de mensagens da conversa com o usuário feita até então.
+
+  Raises:
+    200 (Object Json): Solicitação atendida.
+    500: Problemas com o backend.
+  """
   try:
     resultado = obter_registros_chat()
     return jsonify({
-      'registro': resultado
+      'registro': resultado if resultado is not None and len(resultado) > 0 else []
     }), 200
   except Exception as e:
     return jsonify({'mensagem': f'ERROR: Houve um problema interno - {e}'}), 500
 
-@chat_bp.route('/chat/remover/tudo', methods=['DELETE'])
+@chat_bp.route('/chat/registro/conversa_usuario', methods=['GET'])
+def obter_registro_conversa_usuario_as_str_route():
+  try:
+    registro = obter_registro_as_str(True)
+    
+    return jsonify({'registro': registro}), 200
+  except Exception as e:
+    print(e)
+    return jsonify({'mensagem': "Houve um problema ao tentar resgatar o registro de conversa do usuário"}), 500
+
+@chat_bp.route('/chat/registro/remover_conversa', methods=['DELETE'])
 def remover_tudo():
+  """
+  Usado para apagar toda a conversa feita com o usuário (TUDO)
+  Raises:
+    200 (Object Json): Solicitação atendida.
+    500: Problemas com o backend.
+  """
   try:
     excluir_registro_chat_de_conversa()
-    return jsonify({'mensagem': 'exclusão feita com sucesso.'})
+    return jsonify({'mensagem': 'Registro de conversa excluido com sucesso.'}), 200
   except Exception as e:
     return jsonify({'mensagem': str(e)}),500

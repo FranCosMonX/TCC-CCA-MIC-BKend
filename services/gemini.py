@@ -129,8 +129,10 @@ def carregar_contexto_anterior(historico : str = None):
     raise UsuarioError("Não foi possivel se conectar ao sistema da IA. Verifique a conexão antes de iniciar o Chat.")
   if not chat:
     raise SistemaError("É necessário a abertura de sessão de chat para continuar interagindo com a IA.")
-  if not historico or len(historico) == 0:
+  if not historico:
     raise SistemaError("Está tentando carregar o contexto anterior com dados vazios.")
+  if len(historico) == 0:
+    raise UsuarioError("Não há dados salvos.")
   
   try:
     chat.send_message(f"MENSAGEM DO SISTEMA: Considere as configurações e conversas salvas na sessão anterior para continuar ajudando o usuário.\n{historico}")

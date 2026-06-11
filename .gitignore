@@ -31,3 +31,10 @@ htmlcov/
 # Ide and editor settings
 .vscode/
 .idea/
+
+# pastas dos arquivos
+source/
+source/response
+
+.bd
+database.bd

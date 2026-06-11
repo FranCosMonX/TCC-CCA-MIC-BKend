@@ -21,15 +21,16 @@ from utils.ambiente import (
 
 configuracao_bp = Blueprint("configuracao", __name__)
 
-@configuracao_bp.route('/init')
+@configuracao_bp.route('/init', methods=['GET'])
 def inicializacao_de_dados():
   """
   Primeiro Endpoint que deverá ser chamado para a inicialização do Banco de Dados.
 
   Returns:
   
-    201: Dados salvos com sucesso.
-    500: Problemas com o backend.
+    201 : Dados salvos com sucesso.
+    200 | 204 : Arquivos de configuração já existem.
+    500 : Problemas com o backend.
   """
   
   try:
@@ -59,6 +60,10 @@ def inicializacao_de_dados():
 def remover_configuracao():
   """
   Usado para remover todas as configurações salvas no banco de dados.
+
+  Raises:
+    - 200 : Dados resetados
+    - 500 : Problema no servidor.
   """
   
   try:
@@ -78,11 +83,11 @@ def definir_conf_geral():
   Descrição:
   
     Usado para mudar parâmetros do microcontrolador usados na conversa com a AI. É bastante importante para 
-  Returns:
   
-    201: Dados salvos com sucesso.
-    400: Campo ou alguma entrada de usuário incorreta.
-    500: Problemas com o backend.
+  Raises:
+    201 : Dados salvos com sucesso.
+    400 : Campo ou alguma entrada de usuário incorreta.
+    500 : Problemas com o backend.
   """
   nome_projeto = request.json.get('nome_projeto')
   diretorio = request.json.get('diretorio')
@@ -141,11 +146,11 @@ def definir_conf_mic():
   Descrição:
   
     Usado para mudar parâmetros do microcontrolador usados na conversa com a AI. É bastante importante para 
-  Retorno:
   
-    200: Parâmetros salvos com sucesso.
-    400: Campo ou alguma entrada de usuário incorreta.
-    500: Problemas com o backend.
+  Raises:
+    200 : Parâmetros salvos com sucesso.
+    400 : Campo ou alguma entrada de usuário incorreta.
+    500 : Problemas com o backend.
   """
   id_mic = request.json.get('id_microcontrolador')
   
@@ -186,10 +191,10 @@ def get_dados():
   Descrição:
   
     Usado para mudar parâmetros de configuração usados na conversa com a AI.
-  Retorno:
   
-    200: Parâmetros salvos com sucesso.
-    500: Problemas com o backend.
+  Raises:
+    200 : Parâmetros salvos com sucesso.
+    500 : Problemas com o backend.
   """
   try:
     resultado = obter_configuracao()
