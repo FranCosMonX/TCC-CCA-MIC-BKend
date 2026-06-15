@@ -4,6 +4,8 @@ Sistema principal da aplicação CCA Mic (Construtor de Códigos Automáticos pa
 
 O sistema faz parte de um protótipo de Trabalho de Conclusão de Curso (TCC) e tem como objetivo intermediar a comunicação entre o usuário e uma Inteligência Artificial, além de automatizar o desenvolvimento de Sistemas Embarcados. Com isso, o usuário não precisa configurar manualmente todo o ambiente de desenvolvimento para produzir seus projetos, reduzindo a complexidade do processo. Além disso, a aplicação oferece maior isolamento durante a execução, garantindo que a Inteligência Artificial não tenha acesso direto aos arquivos pessoais da máquina do usuário.
 
+Vale citar um tutorial alterativo em [francosmonx.github.io/#/projetos/cca_mic](https://francosmonx.github.io/#/projetos/cca_mic)
+
 # Arquitetura da Aplicação
 
 O backend foi desenvolvido utilizando o framework **Flask** e atua como responsável por:
@@ -29,6 +31,7 @@ Atualmente:
 - O sistema não foi projetado para exposição pública na internet;
 - O uso remoto deve ser realizado com cautela.
 - Necessidade do Windows ter o `winget`, para instalar o arduino-cli automaticamente.
+- Perda do projeto criado com o mesmo nome do gerado posteriormente.
 
 Portanto, recomenda-se utilizar o sistema apenas em ambientes controlados para fins acadêmicos, testes e desenvolvimento.
 
@@ -36,7 +39,7 @@ Portanto, recomenda-se utilizar o sistema apenas em ambientes controlados para f
 
 O sistema foi desenvolvido utilizando:
 
-- Python;
+- Python v3.14;
   > A aplicação funciona corretamente com python na versão 3.13 e 3.14.
 - Flask;
 - Ambiente virtual (`venv`);
