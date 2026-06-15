@@ -4,7 +4,7 @@ Sistema principal da aplicação CCA Mic (Construtor de Códigos Automáticos pa
 
 O sistema faz parte de um protótipo de Trabalho de Conclusão de Curso (TCC) e tem como objetivo intermediar a comunicação entre o usuário e uma Inteligência Artificial, além de automatizar o desenvolvimento de Sistemas Embarcados. Com isso, o usuário não precisa configurar manualmente todo o ambiente de desenvolvimento para produzir seus projetos, reduzindo a complexidade do processo. Além disso, a aplicação oferece maior isolamento durante a execução, garantindo que a Inteligência Artificial não tenha acesso direto aos arquivos pessoais da máquina do usuário.
 
-Vale citar um tutorial alterativo em [francosmonx.github.io/#/projetos/cca_mic](https://francosmonx.github.io/#/projetos/cca_mic)
+Vale citar um tutorial alterativo em [francosmonx.github.io/#/projetos/tutorial_cca_mic](https://francosmonx.github.io/#/projetos/tutorial_cca_mic)
 
 # Arquitetura da Aplicação
 
