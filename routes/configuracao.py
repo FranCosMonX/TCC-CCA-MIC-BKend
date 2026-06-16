@@ -166,10 +166,6 @@ def definir_conf_mic():
       'mensagem': 'É necessário escolher o microcontrolador para continuar.'
     }), 400
   
-  configuracao = obter_configuracao()
-  if configuracao.get('diretorio') == None:
-    return jsonify({'mensagem': 'Primeiro conclua as configurações gerais. A URI selecionada é importante e usada na etapa de configuração do ambiente de desenvolvimento do microcontrolador.'}), 400
-  
   dados_mic = get_mic_by_id(id_mic)
   # print(dados_mic)
   try:
