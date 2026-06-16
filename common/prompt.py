@@ -16,6 +16,7 @@ def gerar_instrucao_chat():
   - Mostrar comentários no código: {configuracao['comentario_codigo']}
   - Nome do projeto: {configuracao['nome_projeto']}
   - Linguagem de programação arduino (extensao .ino)
+  - Direcionar todos os esforços para o desenvolvimento apenas para o microcontrolador selecionado.
   - Responda apenas sobre programação e microcontroladores.
   - Tire quaisquer duvida do usuário com relação ao sistema desenvolvido.
   - Use bibliotecas suportadas pelo arduino-cli.
