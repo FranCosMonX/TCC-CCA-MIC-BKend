@@ -94,7 +94,7 @@ def definir_conf_geral():
   key_ai_api = request.json.get('key_ai_api')
   ver_codigo = request.json.get('ver_codigo')
   comentario_codigo = request.json.get('comentario_codigo')
-  
+
   configuracao = obter_configuracao()
   status_chave_verificada_bd = configuracao['api_key_valid']
   chave_verificada_bd = configuracao["key_ai_api"]
@@ -123,6 +123,13 @@ def definir_conf_geral():
       'campo': 'diretorio'
     }), 400
   
+  nome_projeto = nome_projeto.strip().replace(' ', '_').replace('-','_')
+  if len(nome_projeto) == 0:
+    return jsonify({
+      'mensagem': 'O campo não pode ser nulo',
+      'campo': 'nome_projeto'
+    }), 400
+
   try:
     msg = atualizar_dadosConf_gerais(nome_projeto, diretorio,ver_codigo,comentario_codigo)
     alterar_prompt_atual(f"comentario do código: {comentario_codigo}, visualizar codigo: {ver_codigo}, o nome do projeto é: {nome_projeto}")
