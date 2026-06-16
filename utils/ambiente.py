@@ -24,7 +24,6 @@ def preparando_ambiente(package_id:str=None):
   if configuracao['diretorio'] is ['', None]:
     raise UsuarioError("É necessário definir parâmetros gerais antes de configurar o ambiente de execução.")
   
-  URI_CONFIG = os.path.join(configuracao['diretorio'],'config')
   COMMAND = 'C:\\Program Files\\Arduino CLI\\arduino-cli.exe'
   comando_atualizar_index = ""
   if package_id == "esp32:esp32":
@@ -57,13 +56,12 @@ def preparando_ambiente(package_id:str=None):
   
   exit /b 0
   """
-  DIRETORIO_CONFIG = Path(configuracao.get('diretorio')) / 'config'
+  DIRETORIO_CONFIG = Path(LOC_PATH) / 'source' / 'config'
   if not os.path.exists(DIRETORIO_CONFIG):
     os.makedirs(DIRETORIO_CONFIG)
-  # criar_diretorios("config")
-  salvar_arquivo(URI_CONFIG, 'ambiente_inicial.bat', BAT_TEXT_INICIAL)
+  salvar_arquivo(DIRETORIO_CONFIG, 'ambiente_inicial.bat', BAT_TEXT_INICIAL)
   
-  retorno = subprocess.run(os.path.join(URI_CONFIG, 'ambiente_inicial.bat'), shell=True)
+  retorno = subprocess.run(os.path.join(DIRETORIO_CONFIG, 'ambiente_inicial.bat'), shell=True)
 
   if retorno.returncode != 0:
     raise AmbienteError("Erro ao executar Script para a instalação dos pacotes Arduino-CLI no terminal")
