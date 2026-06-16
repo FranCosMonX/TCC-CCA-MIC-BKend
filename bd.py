@@ -370,7 +370,7 @@ def get_all_mic():
   try:
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM microcontrolador")
+    cursor.execute("SELECT * FROM microcontrolador ORDER BY nome ASC")
     dados = cursor.fetchall()
     cursor.close()
 
