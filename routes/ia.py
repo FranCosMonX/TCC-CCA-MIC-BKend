@@ -46,13 +46,13 @@ def reconectar():
       mensagem_error += "Não foi informado qual a IA será utilizada."
 
     if nome_ia_bd == IAName.GEMINI:
-      print(f"conexao: {conexao_ok_gemini}")
+      # print(f"conexao: {conexao_ok_gemini}")
       if not conexao_ok_gemini:
         alterar_api_key_gemini(api_key_bd)
         alterar_modelo_gemini(modelo_bd)
       resposta = testar_conexao_gemini()
     elif nome_ia_bd == IAName.CHATGPT:
-      print(f"conexao: {conexao_ok_chatgpt}")
+      # print(f"conexao: {conexao_ok_chatgpt}")
       if not conexao_ok_chatgpt:
         alterar_api_key_chatgpt(api_key_bd)
         alterar_modelo_chatgpt(modelo_bd)
@@ -62,8 +62,10 @@ def reconectar():
       return jsonify({'mensagem': 'Houve um problema inesperado ao tentar identificar a IA escolhida pelo usuário.'}), 404
     
     if resposta:
+      edit_validacao_api_key(True)
       return jsonify({'mensagem': 'conexão recuperada.'}), 200
     else:
+      edit_validacao_api_key(False)
       return jsonify({'mensagem': 'não foi possivel se conectar novamente, tente novamente mais tarde.'})
   except UsuarioError as errU:
     return jsonify({
@@ -175,8 +177,9 @@ def carregar_contexto_anterior_route():
     }), 400
   except IAError as iE:
     edit_validacao_api_key(False)
+    # print(iE)
     return jsonify({
-      'mensagem': f'Houve um problema inesperado com relaçãõ aos serviços de IA. {iE}'
+      'mensagem': f'Houve um problema inesperado com relação aos serviços de IA. {iE}'
     }), 500
   except SistemaError as sE:
     # print(sE)
@@ -268,7 +271,7 @@ def obter_modelo_por_ia_id(id_ia):
       return jsonify({"mensagem": "IA não encontrada"}), 400
     return jsonify(resultado), 200
   except Exception as e:
-    print(f"DEBUG - {e}")
+    # print(f"DEBUG - {e}")
     return jsonify({
       "mensagem": "Houve um problema inesperado no servidor."
     }), 500

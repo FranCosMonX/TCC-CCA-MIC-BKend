@@ -6,7 +6,7 @@ Classe utilizada para controlar a interação entre usuário e a IA da OpenAI ch
 """
 from common.archive import salvar_arquivo
 from common.exceptions import UsuarioError, IAError, SistemaError, RequisicaoError
-from common.prompt import gerar_instrucao_chat, obter_instrucao_chat, gerar_prompt_json_project, obter_prompt_json_project, obter_prompt_atual
+from common.prompt import gerar_instrucao_chat, obter_instrucao_chat, gerar_prompt_json_project, obter_prompt_json_project, obter_prompt_atual, instrucao_modelo_chat
 from utils.registro import registrar_mensagem_chat, obter_registro_as_str
 from openai import OpenAI, AuthenticationError, APIStatusError, APIConnectionError
 from core.Modelo_de_resposta import Projeto_Arduino_ChatGPT
@@ -115,6 +115,8 @@ def carregar_contexto_anterior(historico : str = None):
   Returns:
     Object (`NoneType`) : se tudo der certo, não retorna nada.
   """
+  global current_client_id
+
   if not client_model or not client:
     raise UsuarioError("É necessário informar a API Key e Modelo a ser utilizado no chat.")
   if not conexao_ok:
@@ -124,6 +126,7 @@ def carregar_contexto_anterior(historico : str = None):
   
   try:
     enviar_mensagem(f"MENSAGEM DO SISTEMA: Considere as configurações e conversas salvas na sessão anterior para continuar ajudando o usuário.\n{historico}")
+
   except UsuarioError as e:
     raise UsuarioError(e.message)
   except IAError as e:
@@ -131,6 +134,7 @@ def carregar_contexto_anterior(historico : str = None):
   except SistemaError as e:
     raise SistemaError(e.mensagem)
   except Exception as e:
+    print (e)
     raise RequisicaoError(f"Erro ao enviar o contexto para a IA.")
     
 def solicitar_codigo_fonte(historico: str = None):
@@ -220,6 +224,7 @@ def enviar_mensagem(mensagem: str = None):
     response = client.responses.create(
       model=client_model,
       input=mensagem,
+      instructions=gerar_instrucao_chat(),
       temperature=0.4,
       previous_response_id=current_client_id
     )
@@ -251,27 +256,28 @@ def iniciar_chat():
   """
   global response
   global current_client_id
+  print(f"CUrrenti client {current_client_id}")
 
   if not client or not client_model:
     raise UsuarioError("É necessário passar a API Key e modelo a ser usado pela IA.")
   if not conexao_ok:
     raise UsuarioError("Não foi possivel se conectar ao sistema da IA. Verifique a conexão antes de iniciar o Chat.")
   
-  gerar_instrucao_chat()
+  print(gerar_instrucao_chat())
   
   try:
     if current_client_id is None:
       INPUT = "MENSAGEM DO SISTEMA: O Chat irá iniciar. Lembre-se sempre das regras passadas. Responda apenas com um OK."
       response = client.responses.create(
         model=client_model,
-        instructions=obter_instrucao_chat(),
+        instructions=gerar_instrucao_chat(),
         input=INPUT,
-        temperature=0.2
+        temperature=0.4
       )
 
-      if len(obter_registro_as_str()) == 0:
-        registrar_mensagem_chat('sistema', obter_instrucao_chat())
-        registrar_mensagem_chat('sistema', INPUT)
+      # if len(obter_registro_as_str()) == 0:
+      #   registrar_mensagem_chat('sistema', obter_instrucao_chat())
+      #   registrar_mensagem_chat('sistema', INPUT)
       # if len(obter_registro_as_str()) == 0:
       #   registrar_mensagem_chat('sistema', obter_instrucao_chat())
       #   registrar_mensagem_chat('sistema', INPUT)
@@ -282,10 +288,13 @@ def iniciar_chat():
     else:
       response = client.responses.create(
         model=client_model,
+        instructions=gerar_instrucao_chat(),
         input="MENSAGEM DO SISTEMA: O Chat irá reiniciar. Lembre-se sempre das regras passadas. Responda apenas com um OK.",
-        temperature=0.1,
+        temperature=0.4,
         previous_response_id=current_client_id
       )
+      current_client_id = response.id
+      print(current_client_id)
   except AuthenticationError as e:
     raise UsuarioError(e.message)
   except APIStatusError as e:
