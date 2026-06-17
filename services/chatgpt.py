@@ -6,8 +6,8 @@ Classe utilizada para controlar a interação entre usuário e a IA da OpenAI ch
 """
 from common.archive import salvar_arquivo
 from common.exceptions import UsuarioError, IAError, SistemaError, RequisicaoError
-from common.prompt import gerar_instrucao_chat, obter_instrucao_chat, gerar_prompt_json_project, obter_prompt_json_project, obter_prompt_atual, instrucao_modelo_chat
-from utils.registro import registrar_mensagem_chat, obter_registro_as_str
+from common.prompt import gerar_instrucao_chat, gerar_prompt_json_project, obter_prompt_json_project
+from utils.registro import registrar_mensagem_chat
 from openai import OpenAI, AuthenticationError, APIStatusError, APIConnectionError
 from core.Modelo_de_resposta import Projeto_Arduino_ChatGPT
 from pathlib import Path
