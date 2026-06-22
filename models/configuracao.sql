@@ -42,6 +42,7 @@ INSERT OR IGNORE INTO ia(nome_ia, modelo_disponivel) VALUES ('ChatGPT', "gpt-4o-
 
 INSERT OR IGNORE INTO microcontrolador(nome, fqbn, package_id, ambiente_configurado) VALUES ("ESP32S NodeMCU-32S", "esp32:esp32:nodemcu-32s", "esp32:esp32", 0);
 INSERT OR IGNORE INTO microcontrolador(nome, fqbn, package_id, ambiente_configurado) VALUES ("LilyPad Arduino", "arduino:avr:lilypad", "arduino:avr", 0);
+INSERT OR IGNORE INTO microcontrolador(nome, fqbn, package_id, ambiente_configurado) VALUES ("ESP32 Dev Module", "esp32:esp32:esp32", "esp32:esp32", 0);
 INSERT OR IGNORE INTO microcontrolador(nome, fqbn, package_id, ambiente_configurado) VALUES ("ESP32S2 Dev Module", "esp32:esp32:esp32s2", "esp32:esp32", 0);
 INSERT OR IGNORE INTO microcontrolador(nome, fqbn, package_id, ambiente_configurado) VALUES ("ESP32S3 Dev Module", "esp32:esp32:esp32s3", "esp32:esp32", 0);
 INSERT OR IGNORE INTO microcontrolador(nome, fqbn, package_id, ambiente_configurado) VALUES ("ESP32-WROOM-DA Module", "esp32:esp32:esp32da", "esp32:esp32", 0);

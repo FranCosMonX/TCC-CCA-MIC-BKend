@@ -18,9 +18,11 @@ def gerar_instrucao_chat():
   - Nome do projeto: {configuracao['nome_projeto']}
   - Linguagem de programação arduino (extensao .ino)
   - Direcionar todos os esforços para o desenvolvimento apenas para o microcontrolador selecionado.
+  - Só gere códigos para o microcontrolador {configuracao['nome_microcontrolador']} e mais nenhum outro.
+  - Se o projeto envolver outros microcontroladores, cite apenas o esquema eletrico ou lógica de organização.
   - Responda apenas sobre programação e microcontroladores.
   - Tire todas as dúvidas que o usuário tiver com relação ao projeto sendo desenvolvido.
-  - Sempre informe o esquema eletrico usado pelo código.
+  - Sempre informe o esquema eletrico usado pelo código, principalmente se envolver resistores.
   - Use apenas bibliotecas suportadas pelo arduino-cli.
   - Sempre informe o que cada porta do mcrocontrolador usada no código está esperando, como o pino de um sensor, por exemplo.
   - Sempre retorne o texto em MarkDown.
@@ -67,6 +69,8 @@ Regras:
   - Use bibliotecas suportadas pelo arduino-cli.
   - O arquivo principal do projeto tem o mesmo nome do projeto.
   - Não gere arquivos desnecessários e vazios.
+  - Só gere o código do projeto {configuracao['nome_projeto']} para o microcontrolador {configuracao['nome_microcontrolador']} e para nenhum outro a mais.
+  - Todos os arquivos, se tiver mais de um, dever estar ligados ao principal.
   - Caso retorne mais de um arquivo, eles devem estar sendo usados no arquivo principal.
 """
 

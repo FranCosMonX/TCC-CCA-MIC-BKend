@@ -32,6 +32,8 @@ Atualmente:
 - O uso remoto deve ser realizado com cautela.
 - Necessidade do Windows ter o `winget`, para instalar o arduino-cli automaticamente.
 - Perda do projeto criado com o mesmo nome do gerado posteriormente.
+- Nem todas as placas de prototipação, principalmente alguns modelos do ESP32, podem ser reconhecidos na etapa de gravação por não ser ***Plug & Play***, ou seja, não ser reconhecido automaticamente nas portas USBs sem precisar instalar drives do *Conversor USB Serial*.
+> Caso use o ESP32S, da NodeMCU, o drive pode ser encontrado em [https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads](https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads).
 
 Portanto, recomenda-se utilizar o sistema apenas em ambientes controlados para fins acadêmicos, testes e desenvolvimento.
 
