@@ -75,12 +75,28 @@ def instalar_bibliotecas(bibliotecas: list):
   Args:
       bibliotecas (list): _description_
   """
-  
+  configuracao = obter_configuracao()
+  bibliotecas_nativas_esp32 = []
+
+  if configuracao.get('package_id_mic') == 'esp32:esp32' and len(bibliotecas_nativas_esp32) <= 0:
+    URI_ESP32_PACKAGES = Path.home() / 'AppData' / 'Local' / 'Arduino15' / 'packages' / 'esp32' / 'hardware' / 'esp32'
+    VERSOES = list(URI_ESP32_PACKAGES.iterdir())
+    for caminho_versao in VERSOES:
+      URI_LIBS = caminho_versao / 'libraries'
+      for caminho_lib in list(URI_LIBS.iterdir()):
+        if caminho_lib.name not in bibliotecas_nativas_esp32:
+          bibliotecas_nativas_esp32.append(caminho_lib.name)
+    print(f'Bibliotecas já no esp32:esp32\nQuantidade: {len(bibliotecas_nativas_esp32)}\nBbibliotecas: {bibliotecas_nativas_esp32}')
+
   RETORNO = []
   for biblioteca in bibliotecas:
+    if biblioteca in bibliotecas_nativas_esp32 and configuracao.get('package_id_mic') == 'esp32:esp32':
+      RETORNO.append(True)
+      continue
+
     CODIGO = ["arduino-cli", "lib", "install", biblioteca]
-    print(CODIGO)
     retorno = subprocess.run(CODIGO, capture_output=True, text=True)
+    # print(CODIGO)
 
     def estaInstalado(text=str):
       return text.find("Installed") != -1 or text.find("installed") != -1

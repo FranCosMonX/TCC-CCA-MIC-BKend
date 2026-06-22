@@ -76,7 +76,7 @@ def gerar():
       mensagem = "Problema ao instalar a(s) biblioteca(s):"
       cont = 0 ; problema: bool = False
       for biblioteca_status in bibliotecas_instaladas:
-        cont += 1 ; problema = False
+        cont += 1
         if not biblioteca_status:
           problema = True
           mensagem += f" {objeto_dict["bibliotecas"][cont - 1]}"
