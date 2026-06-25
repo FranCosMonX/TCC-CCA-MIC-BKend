@@ -24,25 +24,21 @@ def criar_projeto(nome: str = None):
 
     nome = nome or nome_projeto
     
-    # Caminhos usando Pathlib (Moderno e Seguro)
     uri_executavel = Path(diretorio_base) / 'executavel'
     project_path = uri_executavel / nome
 
-    # Garante que a pasta 'executavel' existe
     if not uri_executavel.exists():
       criar_diretorios('executavel')
 
     # Se o projeto já existe, removemos para garantir uma criação limpa (conforme a lógica original tentava fazer)
     if project_path.exists():
       try:
-        shutil.rmtree(project_path) # Forma cross-platform de remover diretórios com conteúdo
+        shutil.rmtree(project_path)
       except Exception as e:
         raise SistemaError(f"Falha ao remover projeto antigo: {e}")
 
-    # Execução do comando via lista (evita Shell Injection e problemas de aspas)
     comando = [ARDUINO_CLI_EXE, "sketch", "new", str(project_path)]
     
-    # subprocess.run moderno
     resultado = subprocess.run(
       comando,
       capture_output=True,

@@ -67,6 +67,7 @@ Regras:
   - Nome do projeto: {configuracao['nome_projeto']}
   - Linguagem de programação arduino (extensao .ino)
   - Use bibliotecas suportadas pelo arduino-cli.
+  - Na lista de bibliotecas, informe apenas o nome ignorando a extensão (.h) ou outros. E de preferência, pesquise se existe antes.
   - O arquivo principal do projeto tem o mesmo nome do projeto.
   - Não gere arquivos desnecessários e vazios.
   - Só gere o código do projeto {configuracao['nome_projeto']} para o microcontrolador {configuracao['nome_microcontrolador']} e para nenhum outro a mais.
